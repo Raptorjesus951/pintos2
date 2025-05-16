@@ -1,0 +1,10 @@
+src/devices/
+src/filesys/
+src/examples/
+src/lib/
+src/misc/
+src/test/
+src/Makefile*
+src/threads/
+src/utils/
+src/vm/
