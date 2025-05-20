@@ -38,8 +38,10 @@ process_execute (const char *file_name)
     return TID_ERROR;
   strlcpy (fn_copy, file_name, PGSIZE);
 
+  char *save_ptr;
+
   /* Create a new thread to execute FILE_NAME. */
-  tid = thread_create (file_name, PRI_DEFAULT, start_process, fn_copy);
+  tid = thread_create (strtok_r(file_name, " ", &save_ptr), PRI_DEFAULT, start_process, fn_copy);
   if (tid == TID_ERROR)
     palloc_free_page (fn_copy); 
   return tid;
@@ -52,8 +54,9 @@ static int setup_user_stack(char *cmd, void **esp)
   char *save_ptr;
   size_t argc = 0;
 
-  char* token;
-  for (token = strtok_r (cmd, " ", &save_ptr); token != NULL; token = strtok_r (NULL, " ", &save_ptr))
+  char* token = strtok_r (cmd, " ", &save_ptr); // Skip process name
+
+  for (token = strtok_r (NULL, " ", &save_ptr); token != NULL; token = strtok_r (NULL, " ", &save_ptr))
   {
     if (argc >= ARGS_MAX)
     {
@@ -65,7 +68,7 @@ static int setup_user_stack(char *cmd, void **esp)
     argc++;
   }
 
-  size_t i = ARGS_MAX - 1;
+  int i = ARGS_MAX - 1;
   while (i >= 0)
   {
     size_t token_size_with_null_at_the_end = strlen(args[i]) + 1;
