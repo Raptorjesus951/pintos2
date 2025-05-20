@@ -45,6 +45,52 @@ process_execute (const char *file_name)
   return tid;
 }
 
+static int setup_user_stack(char *cmd, void **esp)
+{
+  char *args[ARGS_MAX];
+
+  char *save_ptr;
+  size_t argc = 0;
+
+  char* token;
+  for (token = strtok_r (cmd, " ", &save_ptr); token != NULL; token = strtok_r (NULL, " ", &save_ptr))
+  {
+    if (argc >= ARGS_MAX)
+    {
+      return 1; // Error
+    }
+
+    args[argc] = token;
+
+    argc++;
+  }
+
+  size_t i = ARGS_MAX - 1;
+  while (i >= 0)
+  {
+    size_t token_size_with_null_at_the_end = strlen(args[i]) + 1;
+
+    *esp -= token_size_with_null_at_the_end;
+
+    memcpy(*esp, args[i], token_size_with_null_at_the_end); // + 1 for NULL at the end of the string
+
+    i--;
+  }
+
+  //push argc and argv  void *argv = *esp;
+  void *argv = *esp;
+  *esp -= sizeof(int);
+  memcpy(*esp, argc, sizeof(int));
+  *esp -= sizeof(void *);
+  memcpy(*esp, argv, sizeof(void *));
+  
+  //fake return adress
+  *esp -= sizeof(int);
+  memcpy(*esp, 0xBEAF, sizeof(int));
+
+  return 0;
+}
+
 /* A thread function that loads a user process and starts it
    running. */
 static void
@@ -65,6 +111,9 @@ start_process (void *file_name_)
   palloc_free_page (file_name);
   if (!success) 
     thread_exit ();
+
+  if(setup_user_stack(&if_.esp, file_name))
+    thread_exit();
 
   /* Start the user process by simulating a return from an
      interrupt, implemented by intr_exit (in
