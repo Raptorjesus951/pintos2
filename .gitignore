@@ -1,10 +1,8 @@
-/src/devices/
 /src/filesys/
+/src/lib/
 /src/misc/
-/src/threads/
 /src/utils/
 /src/examples/
-/src/lib/
 /src/tests/
 /src/vm/
 /src/userprog/build/
