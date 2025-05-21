@@ -38,14 +38,19 @@ process_execute (const char *file_name)
     return TID_ERROR;
   strlcpy (fn_copy, file_name, PGSIZE);
 
+  /*Parsing through argument to have the thread_name*/
+  char* thread_name = fn_copy+strlen(fn_copy)+1;
+  strlcpy (thread_name, file_name, PGSIZE);
+  char *save_ptr;
+  thread_name = strtok_r(thread_name," ",&save_ptr);
   /* Create a new thread to execute FILE_NAME. */
-  tid = thread_create (file_name, PRI_DEFAULT, start_process, fn_copy);
+  tid = thread_create (thread_name, PRI_DEFAULT, start_process, fn_copy);
   if (tid == TID_ERROR)
     palloc_free_page (fn_copy); 
   return tid;
 }
 
-static int setup_user_stack(char *cmd, void **esp)
+static int setup_user_stack(void **esp,const char *cmd)
 {
   char *args[ARGS_MAX];
 
@@ -112,8 +117,6 @@ start_process (void *file_name_)
   if (!success) 
     thread_exit ();
 
-  if(setup_user_stack(&if_.esp, file_name))
-    thread_exit();
 
   /* Start the user process by simulating a return from an
      interrupt, implemented by intr_exit (in
@@ -149,7 +152,7 @@ process_exit (void)
 
   /* Destroy the current process's page directory and switch back
      to the kernel-only page directory. */
-  printf("s: exit(%d)\n", cur->name, cur->exit_code);
+  printf("%s: exit(%d)\n", cur->name, cur->exit_code);
   pd = cur->pagedir;
   if (pd != NULL) 
     {
@@ -245,7 +248,7 @@ struct Elf32_Phdr
 #define PF_W 2          /* Writable. */
 #define PF_R 4          /* Readable. */
 
-static bool setup_stack (void **esp);
+static bool setup_stack (void **esp,const char* cmd);
 static bool validate_segment (const struct Elf32_Phdr *, struct file *);
 static bool load_segment (struct file *file, off_t ofs, uint8_t *upage,
                           uint32_t read_bytes, uint32_t zero_bytes,
@@ -477,7 +480,7 @@ load_segment (struct file *file, off_t ofs, uint8_t *upage,
 /* Create a minimal stack by mapping a zeroed page at the top of
    user virtual memory. */
 static bool
-setup_stack (void **esp) 
+setup_stack (void **esp,const char* cmd) 
 {
   uint8_t *kpage;
   bool success = false;
@@ -491,6 +494,7 @@ setup_stack (void **esp)
       else
         palloc_free_page (kpage);
     }
+  setup_user_stack(esp,cmd);
   return success;
 }
 
