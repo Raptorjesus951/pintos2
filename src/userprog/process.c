@@ -37,7 +37,6 @@ process_execute (const char *file_name)
   if (fn_copy == NULL)
     return TID_ERROR;
   strlcpy (fn_copy, file_name, PGSIZE);
-  /*Parssing in file_name to find cmd and making it the thread's name*/
   char *save_ptr;
   char *thread_name = fn_copy + strlen(fn_copy)+1;
   strlcpy(thread_name,fn_copy,strlen(file_name)+1);
@@ -49,7 +48,7 @@ process_execute (const char *file_name)
   return tid;
 }
 
-static int setup_user_stack(void **esp,char* cmd)
+static int setup_user_stack(void **esp,const char *cmd)
 {
   char *args[ARGS_MAX];
 
@@ -116,6 +115,7 @@ start_process (void *file_name_)
   if (!success) 
     thread_exit ();
 
+
   /* Start the user process by simulating a return from an
      interrupt, implemented by intr_exit (in
      threads/intr-stubs.S).  Because intr_exit takes all of its
@@ -150,7 +150,7 @@ process_exit (void)
 
   /* Destroy the current process's page directory and switch back
      to the kernel-only page directory. */
-  printf("s: exit(%d)\n", cur->name, cur->exit_code);
+  printf("%s: exit(%d)\n", cur->name, cur->exit_code);
   pd = cur->pagedir;
   if (pd != NULL) 
     {
@@ -246,7 +246,7 @@ struct Elf32_Phdr
 #define PF_W 2          /* Writable. */
 #define PF_R 4          /* Readable. */
 
-static bool setup_stack (void **esp,char* file_name);
+static bool setup_stack (void **esp,const char* cmd);
 static bool validate_segment (const struct Elf32_Phdr *, struct file *);
 static bool load_segment (struct file *file, off_t ofs, uint8_t *upage,
                           uint32_t read_bytes, uint32_t zero_bytes,
@@ -478,21 +478,21 @@ load_segment (struct file *file, off_t ofs, uint8_t *upage,
 /* Create a minimal stack by mapping a zeroed page at the top of
    user virtual memory. */
 static bool
-setup_stack (void **esp,char* file_name) 
-{
-  uint8_t *kpage;
-  bool success = false;
+setup_stack (void **esp,const char* cmd) 
+	{
+	  uint8_t *kpage;
+	  bool success = false;
 
-  kpage = palloc_get_page (PAL_USER | PAL_ZERO);
-  if (kpage != NULL) 
-    {
-      success = install_page (((uint8_t *) PHYS_BASE) - PGSIZE, kpage, true);
-      if (success)
-        *esp = PHYS_BASE;
-      else
-        palloc_free_page (kpage);
-    }
-  success = setup_user_stack(esp,file_name);
+	  kpage = palloc_get_page (PAL_USER | PAL_ZERO);
+	  if (kpage != NULL) 
+	    {
+	      success = install_page (((uint8_t *) PHYS_BASE) - PGSIZE, kpage, true);
+	      if (success)
+		*esp = PHYS_BASE;
+	      else
+		palloc_free_page (kpage);
+	    }
+  success = setup_user_stack(esp,cmd);
   return success;
 }
 
