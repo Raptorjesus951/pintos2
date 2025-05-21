@@ -69,14 +69,14 @@ static int setup_user_stack(void **esp,char* cmd)
     argc++;
   }
 
-  size_t i = ARGS_MAX - 1;
-  while (i >= 0)
+  size_t i = argc;
+  while (i > 0)
   {
-    size_t token_size_with_null_at_the_end = strlen(args[i]) + 1;
+    size_t token_size_with_null_at_the_end = strlen(args[i-1]) + 1;
 
     *esp -= token_size_with_null_at_the_end;
 
-    memcpy(*esp, args[i], token_size_with_null_at_the_end); // + 1 for NULL at the end of the string
+    memcpy(*esp, args[i-1], token_size_with_null_at_the_end); // + 1 for NULL at the end of the string
 
     i--;
   }
@@ -84,7 +84,7 @@ static int setup_user_stack(void **esp,char* cmd)
   //push argc and argv  void *argv = *esp;
   void *argv = *esp;
   *esp -= sizeof(int);
-  memcpy(*esp, argc, sizeof(int));
+  memcpy(*esp, &argc, sizeof(int));
   *esp -= sizeof(void *);
   memcpy(*esp, argv, sizeof(void *));
   
@@ -150,7 +150,7 @@ process_exit (void)
 
   /* Destroy the current process's page directory and switch back
      to the kernel-only page directory. */
-  printf("s: exit(%d)\n", curr->name, curr->exit_code);
+  printf("s: exit(%d)\n", cur->name, cur->exit_code);
   pd = cur->pagedir;
   if (pd != NULL) 
     {
