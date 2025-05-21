@@ -73,11 +73,9 @@ static int setup_user_stack(void **esp,const char *cmd)
   size_t i = argc;
   while (i > 0)
   {
-    size_t token_size_with_null_at_the_end = strlen(args[i-1]) + 1;
-
     *esp -= sizeof(char*);
 
-    memcpy(*esp, &args[i-1], token_size_with_null_at_the_end); // + 1 for NULL at the end of the string
+    memcpy(*esp, &args[i-1], sizeof(char*)); // + 1 for NULL at the end of the string
 
     i--;
   }
