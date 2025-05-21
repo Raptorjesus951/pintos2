@@ -88,8 +88,6 @@ static int setup_user_stack(void **esp,const char *cmd)
   memcpy(*esp,&token,sizeof(char**));
   *esp -= sizeof(int);
   memcpy(*esp, &argc, sizeof(int));
-  *esp -= sizeof(void *);
-  memcpy(*esp, argv, sizeof(void *));
   
   //fake return adress
   *esp -= sizeof(void*);
