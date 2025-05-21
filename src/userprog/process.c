@@ -58,38 +58,42 @@ static int setup_user_stack(void **esp,const char *cmd)
   char* token;
   for (token = strtok_r (cmd, " ", &save_ptr); token != NULL; token = strtok_r (NULL, " ", &save_ptr))
   {
+    *esp -= strlen(token)+1;
+    args[argc] = *esp;
     if (argc >= ARGS_MAX)
     {
       return 1; // Error
     }
 
-    args[argc] = token;
-
+    memcpy(*esp,token,strlen(token)+1);
     argc++;
   }
+  args[argc] = 0;
 
   size_t i = argc;
   while (i > 0)
   {
     size_t token_size_with_null_at_the_end = strlen(args[i-1]) + 1;
 
-    *esp -= token_size_with_null_at_the_end;
+    *esp -= sizeof(char*);
 
-    memcpy(*esp, args[i-1], token_size_with_null_at_the_end); // + 1 for NULL at the end of the string
+    memcpy(*esp, &args[i-1], token_size_with_null_at_the_end); // + 1 for NULL at the end of the string
 
     i--;
   }
 
   //push argc and argv  void *argv = *esp;
-  void *argv = *esp;
+  token = *esp;
+  *esp-=sizeof(char**);
+  memcpy(*esp,&token,sizeof(char**));
   *esp -= sizeof(int);
   memcpy(*esp, &argc, sizeof(int));
   *esp -= sizeof(void *);
   memcpy(*esp, argv, sizeof(void *));
   
   //fake return adress
-  *esp -= sizeof(int);
-  memcpy(*esp, 0xBEAF, sizeof(int));
+  *esp -= sizeof(void*);
+  memcpy(*esp, (void*)0xBEAF, sizeof(void*));
 
   return 0;
 }
