@@ -58,7 +58,7 @@ static int setup_user_stack(void **esp,const char *cmd)
   char* token;
   for (token = strtok_r (cmd, " ", &save_ptr); token != NULL; token = strtok_r (NULL, " ", &save_ptr))
   {
-    //printf("%s : argc= %d, thread_name : %s\n",token,argc,thread_current()->name);
+    printf("%s : argc= %d, thread_name : %s\n",token,argc,thread_current()->name);
     *esp -= strlen(token)+1;
     args[argc] = *esp;
     if (argc >= ARGS_MAX)
@@ -512,7 +512,7 @@ setup_stack (void **esp,const char* cmd)
 	      else
 		palloc_free_page (kpage);
 	    }
-  success = setup_user_stack(esp,cmd);
+  success &= !setup_user_stack(esp,cmd);
   return success;
 }
 
