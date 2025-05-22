@@ -3,6 +3,8 @@
 #include <syscall-nr.h>
 #include "threads/interrupt.h"
 #include "threads/thread.h"
+#include "devices/shutdown.h"
+#include "process.h"
 
 static void syscall_handler (struct intr_frame *);
 
@@ -34,18 +36,18 @@ syscall_handler (struct intr_frame *f)
 
     case SYS_EXEC:
     {
-      char *cmd_line = * (char *) *esp;
+      char *cmd_line = (char *) *esp;
       *esp += sizeof(char *);
-      pid_t pid = exec(cmd_line);
-      *esp -= sizeof(pid_t);
-      *(pid_t *)esp = pid;
+      tid_t pid = exec(cmd_line);
+      *esp -= sizeof(tid_t);
+      *(tid_t *)esp = pid;
       break;
     }
 
     case SYS_WAIT:
     {
-      pid_t id = * (pid_t *)esp;
-      *esp += sizeof(pid_t);
+      tid_t id = * (tid_t *)esp;
+      *esp += sizeof(tid_t);
       int status = wait(id);
       *esp -= sizeof(int);
       * (int *) esp = status;
@@ -147,10 +149,8 @@ syscall_handler (struct intr_frame *f)
       unsigned arg2 = * (unsigned *) *esp;
       *esp += sizeof(unsigned);
 
-      void status = seek(arg1, arg2);
+      seek(arg1, arg2);
 
-      *esp -= sizeof(void);
-      * (void *) esp = status;
       break;
     }
 
@@ -171,14 +171,77 @@ syscall_handler (struct intr_frame *f)
       int arg1 = * (int *) *esp;
       *esp += sizeof(int);
 
-      void status = close(arg1);
-
-      *esp -= sizeof(void);
-      * (void *) esp = status;
+      close(arg1);
       break;
     }
   }
 
   printf ("system call!\n");
   thread_exit ();
+}
+
+void halt(void)
+{
+  shutdown_power_off();
+}
+
+void exit(int code)
+{
+  //TODO find a way to return the status to the parent
+  process_exit();
+}
+
+tid_t exec(const char * name)
+{
+  return process_execute(name);
+}
+
+int wait(tid_t child)
+{
+  return process_wait(child);
+}
+
+bool create (const char * name, unsigned size)
+{
+  return 0;
+}
+
+bool remove(const char * name)
+{
+  return 0;
+}
+
+int open (const char * fn)
+{
+  return -1;
+}
+
+int filesize (int fd)
+{
+  return -1;
+}
+
+int read (int fd, void * buf, unsigned size)
+{
+  return -1;
+}
+
+int write (int fd, const void * buf, unsigned size)
+{
+  return -1;
+}
+
+void seek(int fd, unsigned pos)
+{
+
+}
+
+unsigned tell (int fd)
+{
+  return (unsigned)(-1);
+}
+
+void close (int fd)
+{
+
 }
