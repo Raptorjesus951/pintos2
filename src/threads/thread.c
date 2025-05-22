@@ -8,6 +8,7 @@
 #include "threads/interrupt.h"
 #include "threads/intr-stubs.h"
 #include "threads/palloc.h"
+#include "threads/malloc.h"
 #include "threads/switch.h"
 #include "threads/synch.h"
 #include "threads/vaddr.h"
@@ -190,9 +191,9 @@ thread_create (const char *name, int priority,
   t->parent = thread_current();
 
   list_init(&t->children);
-  sema_init(&t->children_sema);
+  sema_init(&t->children_sema,0);
   struct child_satus* child = malloc(sizeof(struct child_status));
-  child->id = tid;
+  child->child_tid = tid;
   child->used=1;
   list_push_back(&thread_current()->children,&child->elem);
   /* Prepare thread for first run by initializing its stack.
