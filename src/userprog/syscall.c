@@ -24,9 +24,12 @@ syscall_handler (struct intr_frame *f UNUSED)
     case SYS_EXIT:
     exit(*(p+1));
     break;
+    default:
+  	exit(1);
+    break;
   }
 }
 void exit (int status){
-  thread_current()->exit_code;
+  thread_current()->exit_code = status;
   thread_exit();
 }
