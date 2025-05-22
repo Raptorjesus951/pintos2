@@ -34,19 +34,19 @@ void exit (int status){
   struct thread* parent = cur->parent;
   cur->exit_code = status;
   if (cur->parent == NULL){
-      struct child_status* child;
+      struct thread* child;
       struct list_elem *e;
       for (e = list_begin(&parent->children); e != list_end(&parent->children);e = list_next(e)){
-        child = list_entry(e, struct child_status, elem);
-        if (child->child_tid == cur->tid)
+        child = list_entry(e, struct thread, elem);
+        if (child->tid == cur->tid)
           break;
       }
       if (e != list_end(&parent->children)){
-        child->ret_val=status;
-        child->used=0;
+        cur->used=0;
+      
+        if (parent->id_wait == cur->tid)
+          sema_up(&parent->children_sema);
       }
-      if (parent->id_wait == cur->tid)
-        sema_up(&parent->children_sema);
   }
   thread_exit();
 } 

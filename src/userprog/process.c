@@ -15,6 +15,7 @@
 #include "threads/init.h"
 #include "threads/interrupt.h"
 #include "threads/palloc.h"
+#include "threads/malloc.h"
 #include "threads/thread.h"
 #include "threads/vaddr.h"
 
@@ -144,17 +145,16 @@ process_wait (tid_t child_tid )
 {
   struct thread* cur = thread_current();
 
-  struct child_status* child;
+  struct thread* child;
   struct list_elem *e;
   for (e = list_begin(&cur->children); e != list_end(&cur->children);e = list_next(e)){
-    child = list_entry(e, struct child_status, elem);
-    if (child->child_tid == child_tid){
+    child = list_entry(e, struct thread, elem);
+    if (child->tid == child_tid){
     cur->id_wait = child_tid;
     if (child->used)
       sema_down(&cur->children_sema);
-    int status = child->exit_code;
+    int exit_code = child->exit_code;
     list_remove(e);
-    free(child);
     return exit_code;
     }
   }
@@ -512,7 +512,7 @@ setup_stack (void **esp,const char* cmd)
 	      else
 		palloc_free_page (kpage);
 	    }
-  success &= !setup_user_stack(esp,cmd);
+  //success &= !setup_user_stack(esp,cmd);
   return success;
 }
 
