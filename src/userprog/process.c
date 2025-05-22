@@ -37,10 +37,14 @@ process_execute (const char *file_name)
   if (fn_copy == NULL)
     return TID_ERROR;
   strlcpy (fn_copy, file_name, PGSIZE);
+
+  char file_name_cpy[PGSIZE];
+  strlcpy(file_name_cpy, file_name, PGSIZE);
+
   char *save_ptr;
 
   /* Create a new thread to execute FILE_NAME. */
-  tid = thread_create (strtok_r(file_name, " ", &save_ptr), PRI_DEFAULT, start_process, fn_copy);
+  tid = thread_create (strtok_r(file_name_cpy, " ", &save_ptr), PRI_DEFAULT, start_process, fn_copy);
   if (tid == TID_ERROR)
     palloc_free_page (fn_copy); 
   return tid;
@@ -79,14 +83,14 @@ static int setup_user_stack(void **esp,char* cmd)
     i--;
   }
 
-  //push argc and argv  void *argv = *esp;
+  // Push argc and argv  void *argv = *esp;
   void *argv = *esp;
   *esp -= sizeof(int);
   memcpy(*esp, argc, sizeof(int));
   *esp -= sizeof(void *);
   memcpy(*esp, argv, sizeof(void *));
   
-  //fake return adress
+  // Fake return address
   *esp -= sizeof(int);
   memcpy(*esp, 0xBEAF, sizeof(int));
 
