@@ -58,6 +58,7 @@ static int setup_user_stack(void **esp,const char *cmd)
   char* token;
   for (token = strtok_r (cmd, " ", &save_ptr); token != NULL; token = strtok_r (NULL, " ", &save_ptr))
   {
+    //printf("%s : argc= %d, thread_name : %s\n",token,argc,thread_current()->name);
     *esp -= strlen(token)+1;
     args[argc] = *esp;
     if (argc >= ARGS_MAX)
@@ -73,24 +74,27 @@ static int setup_user_stack(void **esp,const char *cmd)
   size_t i = argc;
   while (i > 0)
   {
-    *esp -= sizeof(char*);
+    //printf("%s,ptr =0x%o, i=%d\n",args[i-1],&args[i-1],i-1);
+    *esp -= sizeof(char**);
 
-    memcpy(*esp, &args[i-1], sizeof(char*)); // + 1 for NULL at the end of the string
+    memcpy(*esp, &args[i-1], sizeof(char**)); // + 1 for NULL at the end of the string
 
     i--;
   }
 
-  //push argc and argv  void *argv = *esp;
+  //push argc and argv  
   token = *esp;
   *esp-=sizeof(char**);
   memcpy(*esp,&token,sizeof(char**));
+  //printf("0x%p\n",&token);
   *esp -= sizeof(int);
   memcpy(*esp, &argc, sizeof(int));
+  //printf("0x%p\n",&argc);
   
   //fake return adress
   *esp -= sizeof(void*);
-  memcpy(*esp, (void*)0xBEAF, sizeof(void*));
-
+  memcpy(*esp, &args[argc], sizeof(void*));
+  //printf("0x%p\n",&args[argc]);
   return 0;
 }
 
@@ -138,6 +142,7 @@ start_process (void *file_name_)
 int
 process_wait (tid_t child_tid UNUSED) 
 {
+  while(1){}
   return -1;
 }
 
@@ -366,7 +371,7 @@ load (const char *file_name, void (**eip) (void), void **esp)
   file_close (file);
   return success;
 }
-
+
 /* load() helpers. */
 
 static bool install_page (void *upage, void *kpage, bool writable);
