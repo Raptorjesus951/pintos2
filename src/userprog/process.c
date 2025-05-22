@@ -41,6 +41,7 @@ process_execute (const char *file_name)
   char *save_ptr;
   char *thread_name = fn_copy + strlen(fn_copy)+1;
   strlcpy(thread_name,fn_copy,strlen(file_name)+1);
+  printf("%s\n",thread_name);
   thread_name = strtok_r(thread_name," ",&save_ptr);
   /* Create a new thread to execute FILE_NAME. */
   tid = thread_create (thread_name, PRI_DEFAULT, start_process, fn_copy);
@@ -512,7 +513,7 @@ setup_stack (void **esp,const char* cmd)
 	      else
 		palloc_free_page (kpage);
 	    }
-  //success &= !setup_user_stack(esp,cmd);
+  success &= !setup_user_stack(esp,cmd);
   return success;
 }
 
