@@ -80,6 +80,13 @@ typedef int tid_t;
    only because they are mutually exclusive: only a thread in the
    ready state is on the run queue, whereas only a thread in the
    blocked state is on a semaphore wait list. */
+struct child_status {
+  tid_t child_tid;
+  int exit_code;
+  bool used;
+  struct list_elem elem;
+};
+
 struct thread
   {
     /* Owned by thread.c. */
@@ -102,6 +109,11 @@ struct thread
     /* Owned by thread.c. */
     unsigned magic;                     /* Detects stack overflow. */
     int exit_code;                      /*thread's exit code*/
+
+    struct semaphore children_sema; 
+    struct list children; // list of struct child_status
+    struct thread* parent; // parent thread
+    tid_t id_wait; //id of the child who the process wait
   };
 
 /* If false (default), use round-robin scheduler.

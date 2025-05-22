@@ -187,7 +187,14 @@ thread_create (const char *name, int priority,
   /* Initialize thread. */
   init_thread (t, name, priority);
   tid = t->tid = allocate_tid ();
+  t->parent = thread_current();
 
+  list_init(&t->children);
+  sema_init(&t->children_sema);
+  struct child_satus* child = malloc(sizeof(struct child_status));
+  child->id = tid;
+  child->used=1;
+  list_push_back(&thread_current()->children,&child->elem);
   /* Prepare thread for first run by initializing its stack.
      Do this atomically so intermediate values for the 'stack' 
      member cannot be observed. */
@@ -196,8 +203,8 @@ thread_create (const char *name, int priority,
   /* Stack frame for kernel_thread(). */
   kf = alloc_frame (t, sizeof *kf);
   kf->eip = NULL;
-kf->function = function;
-kf->aux = aux;
+  kf->function = function;
+  kf->aux = aux;
 
   /* Stack frame for switch_entry(). */
   ef = alloc_frame (t, sizeof *ef);

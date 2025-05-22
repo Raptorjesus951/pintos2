@@ -30,6 +30,23 @@ syscall_handler (struct intr_frame *f UNUSED)
   }
 }
 void exit (int status){
-  thread_current()->exit_code = status;
+  struct thread* cur = thread_current();
+  struct thread* parent = cur->parent;
+  cur->exit_code = status;
+  if (cur->parent == NULL){
+      struct child_status* child;
+      struct list_elem *e;
+      for (e = list_begin(&parent->children); e != list_end(&parent->children);e = list_next(e)){
+        child = list_entry(e, struct child_status, elem);
+        if (child->child_tid == cur->tid)
+          break;
+      }
+      if (e != list_end(&parent->children)){
+        child->ret_val=status;
+        child->used=0;
+      }
+      if (parent->id_wait == cur->tid)
+        sema_up(&parent->children_sema);
+  }
   thread_exit();
 } 

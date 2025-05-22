@@ -116,9 +116,9 @@ start_process (void *file_name_)
 
   /* If load failed, quit. */
   palloc_free_page (file_name);
-  if (!success) 
+  if (!success) {
     thread_exit ();
-
+  }
 
   /* Start the user process by simulating a return from an
      interrupt, implemented by intr_exit (in
@@ -140,9 +140,24 @@ start_process (void *file_name_)
    This function will be implemented in problem 2-2.  For now, it
    does nothing. */
 int
-process_wait (tid_t child_tid UNUSED) 
+process_wait (tid_t child_tid ) 
 {
-  while(1){}
+  struct thread* cur = thread_current();
+
+  struct child_status* child;
+  struct list_elem *e;
+  for (e = list_begin(&cur->children); e != list_end(&cur->children);e = list_next(e)){
+    child = list_entry(e, struct child_status, elem);
+    if (child->child_tid == child_tid){
+    cur->id_wait = child_tid;
+    if (child->used)
+      sema_down(&cur->children_sema);
+    int status = child->exit_code;
+    list_remove(e);
+    free(child);
+    return exit_code;
+    }
+  }
   return -1;
 }
 
