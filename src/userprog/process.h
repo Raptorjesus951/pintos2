@@ -8,4 +8,11 @@ int process_wait (tid_t);
 void process_exit (void);
 void process_activate (void);
 
+struct child_status {
+  tid_t child_tid;
+  int exit_code;
+  bool used;
+  struct list_elem elem;
+};
+
 #endif /* userprog/process.h */

@@ -5,6 +5,7 @@
 #include <list.h>
 #include <stdint.h>
 
+
 /* States in a thread's life cycle. */
 enum thread_status
   {
@@ -110,12 +111,6 @@ struct thread
     tid_t id_wait; //id of the child who the process wait
   };
 
-struct child_status {
-  tid_t child_tid;
-  int exit_code;
-  bool used;
-  struct list_elem elem;
-};
 
 /* If false (default), use round-robin scheduler.
    If true, use multi-level feedback queue scheduler.
