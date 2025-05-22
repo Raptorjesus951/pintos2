@@ -93,7 +93,7 @@ static int setup_user_stack(void **esp,const char *cmd)
   
   //fake return adress
   *esp -= sizeof(void*);
-  memcpy(*esp, &args[argc], sizeof(void*));
+  memset(*esp, 0xBEAF, sizeof(int));
   //printf("0x%p\n",&args[argc]);
   return 0;
 }

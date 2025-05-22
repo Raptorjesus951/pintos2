@@ -32,4 +32,4 @@ syscall_handler (struct intr_frame *f UNUSED)
 void exit (int status){
   thread_current()->exit_code = status;
   thread_exit();
-}
+} 
