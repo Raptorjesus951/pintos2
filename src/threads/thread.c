@@ -8,11 +8,12 @@
 #include "threads/interrupt.h"
 #include "threads/intr-stubs.h"
 #include "threads/palloc.h"
+#include "threads/malloc.h"
 #include "threads/switch.h"
 #include "threads/synch.h"
 #include "threads/vaddr.h"
-#ifdef USERPROG
 #include "userprog/process.h"
+#ifdef USERPROG
 #endif
 
 /* Random value for struct thread's `magic' member.
@@ -187,7 +188,9 @@ thread_create (const char *name, int priority,
   /* Initialize thread. */
   init_thread (t, name, priority);
   tid = t->tid = allocate_tid ();
+  t->parent = thread_current();
 
+  list_push_back(&thread_current()->children,&t->elem);
   /* Prepare thread for first run by initializing its stack.
      Do this atomically so intermediate values for the 'stack' 
      member cannot be observed. */
@@ -196,8 +199,8 @@ thread_create (const char *name, int priority,
   /* Stack frame for kernel_thread(). */
   kf = alloc_frame (t, sizeof *kf);
   kf->eip = NULL;
-kf->function = function;
-kf->aux = aux;
+  kf->function = function;
+  kf->aux = aux;
 
   /* Stack frame for switch_entry(). */
   ef = alloc_frame (t, sizeof *ef);
@@ -492,6 +495,8 @@ init_thread (struct thread *t, const char *name, int priority)
   t->priority = priority;
   t->magic = THREAD_MAGIC;
   list_push_back (&all_list, &t->allelem);
+  list_init(&t->children);
+  sema_init(&t->children_sema,0);
 }
 
 /* Allocates a SIZE-byte frame at the top of thread T's stack and

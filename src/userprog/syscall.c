@@ -177,19 +177,45 @@ syscall_handler (struct intr_frame *f)
   }
 
   printf ("system call!\n");
-  thread_exit ();
+  int* p = f->esp;
+  int syscall = *p;
+
+  switch(syscall)
+  {
+    case SYS_EXIT:
+    exit(*(p+1));
+    break;
+    default:
+  	exit(1);
+    break;
+  }
 }
 
 void halt(void)
 {
   shutdown_power_off();
 }
-
-void exit(int code)
-{
-  //TODO find a way to return the status to the parent
-  process_exit();
-}
+void exit (int status){
+  struct thread* cur = thread_current();
+  struct thread* parent = cur->parent;
+  cur->exit_code = status;
+  if (cur->parent == NULL){
+      struct thread* child;
+      struct list_elem *e;
+      for (e = list_begin(&parent->children); e != list_end(&parent->children);e = list_next(e)){
+        child = list_entry(e, struct thread, elem);
+        if (child->tid == cur->tid)
+          break;
+      }
+      if (e != list_end(&parent->children)){
+        cur->used=0;
+      
+        if (parent->id_wait == cur->tid)
+          sema_up(&parent->children_sema);
+      }
+  }
+  thread_exit();
+} 
 
 tid_t exec(const char * name)
 {
