@@ -109,7 +109,9 @@ struct thread
     struct list children; // list of struct child_status
     struct thread* parent; // parent thread
     tid_t id_wait; //id of the child who the process wait
+    int used;
   };
+
 
 
 /* If false (default), use round-robin scheduler.

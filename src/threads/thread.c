@@ -14,7 +14,6 @@
 #include "threads/vaddr.h"
 #include "userprog/process.h"
 #ifdef USERPROG
-#include "userprog/process.h"
 #endif
 
 /* Random value for struct thread's `magic' member.
@@ -191,12 +190,7 @@ thread_create (const char *name, int priority,
   tid = t->tid = allocate_tid ();
   t->parent = thread_current();
 
-  list_init(&t->children);
-  sema_init(&t->children_sema,0);
-  struct child_satus* child = malloc(sizeof(struct child_status));
-  child->child_tid = tid;
-  child->used=1;
-  list_push_back(&thread_current()->children,&child->elem);
+  list_push_back(&thread_current()->children,&t->elem);
   /* Prepare thread for first run by initializing its stack.
      Do this atomically so intermediate values for the 'stack' 
      member cannot be observed. */
@@ -501,6 +495,8 @@ init_thread (struct thread *t, const char *name, int priority)
   t->priority = priority;
   t->magic = THREAD_MAGIC;
   list_push_back (&all_list, &t->allelem);
+  list_init(&t->children);
+  sema_init(&t->children_sema,0);
 }
 
 /* Allocates a SIZE-byte frame at the top of thread T's stack and
