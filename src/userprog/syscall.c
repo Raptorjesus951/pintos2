@@ -11,177 +11,112 @@ static void syscall_handler (struct intr_frame *);
 void
 syscall_init (void) 
 {
-  intr_register_int (0x30, 3, INTR_ON, syscall_handler, "syscall");
+    intr_register_int (0x30, 3, INTR_ON, syscall_handler, "syscall");
+}
+
+static void *
+get_arg(struct intr_frame *f, int index)
+{
+  return (void *)((uint32_t *) f->esp + index);
 }
 
 static void
-syscall_handler (struct intr_frame *f) 
+syscall_handler(struct intr_frame *f)
 {
-  printf("system call!\n");
-  printf("%d\n",SYS_EXIT);
-  void **esp = &f->esp;
-  printf("esp:%p\n",*esp);
-  int inter_id = * (int *)*esp;
-  printf("inter_id:%d\n",inter_id);
-  printf("BOUBOU\n");
-  switch (1)
+  int syscall_number = *(int *)f->esp;
+  printf("System call number: %d\n", syscall_number);
+
+  switch (syscall_number)
   {
     case SYS_HALT:
       halt();
       break;
 
-    case SYS_EXIT:
-    {
-      printf("RATATTTATATATA\n");
-      *esp += sizeof(int);
-      int arg1 = * (int *)*esp;
-      exit(arg1);
-      break;
-    }
+    case SYS_EXIT: {
+                     int status = *(int *) get_arg(f, 1);
+                     exit(status);
+                     break;
+                   }
 
-    case SYS_EXEC:
-    {
-      char *cmd_line = (char *) *esp;
-      *esp += sizeof(char *);
-      tid_t pid = exec(cmd_line);
-      *esp -= sizeof(tid_t);
-      *(tid_t *)esp = pid;
-      break;
-    }
+    case SYS_EXEC: {
+                     const char *cmd_line = *(char **) get_arg(f, 1);
+                     f->eax = exec(cmd_line);
+                     break;
+                   }
 
-    case SYS_WAIT:
-    {
-      tid_t id = * (tid_t *)esp;
-      *esp += sizeof(tid_t);
-      int status = wait(id);
-      *esp -= sizeof(int);
-      * (int *) esp = status;
-      break;
-    }
+    case SYS_WAIT: {
+                     tid_t pid = *(tid_t *) get_arg(f, 1);
+                     f->eax = wait(pid);
+                     break;
+                   }
 
-    case SYS_CREATE:
-    {
-      char *arg1 = (char *) *esp;
-      *esp += sizeof(char *);
+    case SYS_CREATE: {
+                       const char *file = *(char **) get_arg(f, 1);
+                       unsigned initial_size = *(unsigned *) get_arg(f, 2);
+                       f->eax = create(file, initial_size);
+                       break;
+                     }
 
-      unsigned arg2 = * (unsigned *) *esp;
-      *esp += sizeof(unsigned);
+    case SYS_REMOVE: {
+                       const char *file = *(char **) get_arg(f, 1);
+                       f->eax = remove(file);
+                       break;
+                     }
 
-      bool status = create(arg1, arg2);
+    case SYS_OPEN: {
+                     const char *file = *(char **) get_arg(f, 1);
+                     f->eax = open(file);
+                     break;
+                   }
 
-      *esp -= sizeof(bool);
-      * (bool *) esp = status;
-      break;
-    }
+    case SYS_FILESIZE: {
+                         int fd = *(int *) get_arg(f, 1);
+                         f->eax = filesize(fd);
+                         break;
+                       }
 
-    case SYS_REMOVE:
-    {
-      char *arg1 = (char *) *esp;
-      *esp += sizeof(char *);
+    case SYS_READ: {
+                     int fd = *(int *) get_arg(f, 1);
+                     void *buffer = *(void **) get_arg(f, 2);
+                     unsigned size = *(unsigned *) get_arg(f, 3);
+                     f->eax = read(fd, buffer, size);
+                     break;
+                   }
 
-      bool status = remove(arg1);
+    case SYS_WRITE: {
+                      int fd = *(int *) get_arg(f, 1);
+                      const void *buffer = *(void **) get_arg(f, 2);
+                      unsigned size = *(unsigned *) get_arg(f, 3);
+                      f->eax = write(fd, buffer, size);
+                      break;
+                    }
 
-      *esp -= sizeof(bool);
-      * (bool *) esp = status;
-      break;
-    }
+    case SYS_SEEK: {
+                     int fd = *(int *) get_arg(f, 1);
+                     unsigned position = *(unsigned *) get_arg(f, 2);
+                     seek(fd, position);
+                     break;
+                   }
 
-    case SYS_OPEN:
-    {
-      char *arg1 = (char *) *esp;
-      *esp += sizeof(char *);
+    case SYS_TELL: {
+                     int fd = *(int *) get_arg(f, 1);
+                     f->eax = tell(fd);
+                     break;
+                   }
 
-      int status = open(arg1);
+    case SYS_CLOSE: {
+                      int fd = *(int *) get_arg(f, 1);
+                      close(fd);
+                      break;
+                    }
 
-      *esp -= sizeof(int);
-      * (int *) esp = status;
-      break;
-    }
-
-    case SYS_FILESIZE:
-    {
-      printf("TA AGSAGASDG\n");
-      int arg1 = * (int *) *esp;
-      *esp += sizeof(int);
-
-      int status = filesize(arg1);
-
-      *esp -= sizeof(int);
-      * (int *) esp = status;
-      break;
-    }
-
-    case SYS_READ:
-    {
-      int arg1 = * (int *) *esp;
-      *esp += sizeof(int);
-
-      void *arg2 = (void *) *esp;
-      *esp += sizeof(void *);
-
-      unsigned arg3 = * (unsigned *) *esp;
-      *esp += sizeof(unsigned);
-
-      int status = read(arg1, arg2, arg3);
-
-      *esp -= sizeof(int);
-      * (int *) esp = status;
-      break;
-    }
-
-  case SYS_WRITE:
-    {
-      int arg1 = * (int *) *esp;
-      *esp += sizeof(int);
-
-      void *arg2 = (void *) *esp;
-      *esp += sizeof(void *);
-
-      unsigned arg3 = * (unsigned *) *esp;
-      *esp += sizeof(unsigned);
-
-      int status = write(arg1, arg2, arg3);
-
-      *esp -= sizeof(int);
-      * (int *) esp = status;
-      break;
-    }
-
-    case SYS_SEEK:
-    {
-      int arg1 = * (int *) *esp;
-      *esp += sizeof(int);
-
-      unsigned arg2 = * (unsigned *) *esp;
-      *esp += sizeof(unsigned);
-
-      seek(arg1, arg2);
-
-      break;
-    }
-
-    case SYS_TELL:
-    {
-      int arg1 = * (int *) *esp;
-      *esp += sizeof(int);
-
-      unsigned status = tell(arg1);
-
-      *esp -= sizeof(unsigned);
-      * (unsigned *) esp = status;
-      break;
-    }
-
-    case SYS_CLOSE:
-    {
-      int arg1 = * (int *) *esp;
-      *esp += sizeof(int);
-
-      close(arg1);
-      break;
-    }
+    default:
+                    printf("Unknown system call: %d\n", syscall_number);
+                    thread_exit();
+                    break;
   }
 }
+
 
 void halt(void)
 {
@@ -192,19 +127,19 @@ void exit (int status){
   struct thread* parent = cur->parent;
   cur->exit_code = status;
   if (cur->parent != NULL){
-      struct thread* child;
-      struct list_elem *e;
-      for (e = list_begin(&parent->children); e != list_end(&parent->children);e = list_next(e)){
-        child = list_entry(e, struct thread, elem);
-        if (child->tid == cur->tid)
-          break;
-      }
-      if (e != list_end(&parent->children)){
-        cur->used=0;
-      
-        if (parent->id_wait == cur->tid)
-          sema_up(&parent->children_sema);
-      }
+    struct thread* child;
+    struct list_elem *e;
+    for (e = list_begin(&parent->children); e != list_end(&parent->children);e = list_next(e)){
+      child = list_entry(e, struct thread, elem);
+      if (child->tid == cur->tid)
+        break;
+    }
+    if (e != list_end(&parent->children)){
+      cur->used=0;
+
+      if (parent->id_wait == cur->tid)
+        sema_up(&parent->children_sema);
+    }
   }
   thread_exit();
 } 
