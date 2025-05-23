@@ -40,8 +40,8 @@ process_execute (const char *file_name)
   strlcpy (fn_copy, file_name, PGSIZE);
 
   char *save_ptr;
-  char *thread_name = fn_copy + strlen(fn_copy)+1;
-  strlcpy(thread_name,fn_copy,strlen(file_name)+1);
+  char *thread_name = fn_copy + strlen(fn_copy) + 1;
+  strlcpy(thread_name, file_name, strlen(file_name) + 1);
   //printf("%s\n",thread_name);
   thread_name = strtok_r(thread_name," ",&save_ptr);
   /* Create a new thread to execute FILE_NAME. */
@@ -96,8 +96,8 @@ static int setup_user_stack(void **esp, char *cmd)
   //printf("0x%p\n",&argc);
   
   // Fake return address
-  *esp -= sizeof(int);
-  // memcpy(*esp, &args[argc], sizeof(int));
+  *esp -= sizeof(void *);
+  memset(*esp, 0, sizeof(void *));
   //printf("0x%p\n",&args[argc]);
   return 0;
 }
@@ -296,8 +296,19 @@ load (const char *file_name, void (**eip) (void), void **esp)
     goto done;
   process_activate ();
 
+  char *fn_copy;
+  /* Make a copy of FILE_NAME.
+     Otherwise there's a race between the caller and load(). */
+  fn_copy = malloc(strlen(file_name)+1);
+  if (fn_copy == NULL)
+    return TID_ERROR;
+  strlcpy (fn_copy, file_name, PGSIZE);
+  char* save_ptr;
+  fn_copy = strtok_r(fn_copy," ",&save_ptr);
+
   /* Open executable file. */
-  file = filesys_open (file_name);
+  file = filesys_open (fn_copy);
+  free(fn_copy);
   if (file == NULL) 
     {
       printf ("load: %s: open failed\n", file_name);
