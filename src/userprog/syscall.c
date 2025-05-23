@@ -112,16 +112,16 @@ syscall_handler(struct intr_frame *f)
 
     default:
                     printf("Unknown system call: %d\n", syscall_number);
-                    thread_exit();
+                    exit(-1);
                     break;
   }
 }
-
 
 void halt(void)
 {
   shutdown_power_off();
 }
+
 void exit (int status){
   struct thread* cur = thread_current();
   struct thread* parent = cur->parent;
