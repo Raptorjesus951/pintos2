@@ -34,10 +34,15 @@ get_arg(struct intr_frame *f, int index)
 static void
 syscall_handler(struct intr_frame *f)
 {
-  int syscall_number = *(int *)f->esp;
+  int *syscall_number = (int *)f->esp;
   //printf("System call number: %d\n", syscall_number);
 
-  switch (syscall_number)
+  if (!is_user_vaddr(syscall_number))
+  {
+    exit(-1);
+  }
+
+  switch (*syscall_number)
   {
     case SYS_HALT:
       halt();
@@ -146,7 +151,7 @@ syscall_handler(struct intr_frame *f)
                     }
 
     default:
-                    printf("Unknown system call: %d\n", syscall_number);
+                    printf("Unknown system call: %d\n", *syscall_number);
                     exit(-1);
                     break;
   }
@@ -257,7 +262,7 @@ int read (int fd, void * buf, unsigned size)
   if(!buf)
     return -1;
 
-  int byte_read = 0;
+  unsigned byte_read = 0;
 
   if(fd == STDIN_FILENO)
   {

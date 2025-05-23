@@ -4,7 +4,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-#define ARGS_MAX 18
+#define ARGS_MAX 64
 
 uint32_t *pagedir_create (void);
 void pagedir_destroy (uint32_t *pd);

@@ -51,7 +51,7 @@ process_execute (const char *file_name)
   return tid;
 }
 
-static int setup_user_stack(void **esp,const char *cmd)
+static int setup_user_stack(void **esp, char *cmd)
 {
   char *args[ARGS_MAX];
 
@@ -75,21 +75,21 @@ static int setup_user_stack(void **esp,const char *cmd)
   }
   args[argc] = 0;
 
-  size_t i = argc;
-  while (i > 0)
+  int i = argc;
+  while (i >= 0)
   {
     //printf("%s,ptr =0x%o, i=%d\n",args[i-1],&args[i-1],i-1);
-    *esp -= sizeof(char**);
+    *esp -= sizeof(char*);
 
-    memcpy(*esp, &args[i-1], sizeof(char**)); // + 1 for NULL at the end of the string
+    memcpy(*esp, &args[i], sizeof(char*)); // + 1 for NULL at the end of the string
 
     i--;
   }
 
   //push argc and argv  
   token = *esp;
-  *esp-=sizeof(char**);
-  memcpy(*esp,&token,sizeof(char**));
+  *esp-=sizeof(char*);
+  memcpy(*esp,&token,sizeof(char*));
   //printf("0x%p\n",&token);
   *esp -= sizeof(int);
   memcpy(*esp, &argc, sizeof(int));
@@ -97,7 +97,7 @@ static int setup_user_stack(void **esp,const char *cmd)
   
   // Fake return address
   *esp -= sizeof(int);
-  memcpy(*esp, &args[argc], sizeof(int));
+  // memcpy(*esp, &args[argc], sizeof(int));
   //printf("0x%p\n",&args[argc]);
   return 0;
 }
@@ -502,7 +502,7 @@ load_segment (struct file *file, off_t ofs, uint8_t *upage,
 /* Create a minimal stack by mapping a zeroed page at the top of
    user virtual memory. */
 static bool
-setup_stack (void **esp,const char* cmd) 
+setup_stack (void **esp, const char* cmd) 
 	{
 	  uint8_t *kpage;
 	  bool success = false;
@@ -515,8 +515,8 @@ setup_stack (void **esp,const char* cmd)
 		*esp = PHYS_BASE;
 	      else
 		palloc_free_page (kpage);
-	    }
-  success &= !setup_user_stack(esp,cmd);
+	}
+  success &= !setup_user_stack(esp, cmd);
   return success;
 }
 
