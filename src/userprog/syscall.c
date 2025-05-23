@@ -3,6 +3,7 @@
 #include <syscall-nr.h>
 #include "threads/interrupt.h"
 #include "threads/thread.h"
+#include "threads/vaddr.h"
 
 #include "devices/shutdown.h"
 #include "devices/input.h"
@@ -50,6 +51,10 @@ syscall_handler(struct intr_frame *f)
 
     case SYS_EXEC: {
                      const char *cmd_line = *(char **) get_arg(f, 1);
+                     if (!is_user_vaddr(cmd_line))
+                     {
+                       exit(-1);
+                     }
                      f->eax = exec(cmd_line);
                      break;
                    }
@@ -62,6 +67,10 @@ syscall_handler(struct intr_frame *f)
 
     case SYS_CREATE: {
                        const char *file = *(char **) get_arg(f, 1);
+                       if (!is_user_vaddr(file))
+                       {
+                         exit(-1);
+                       }
                        unsigned initial_size = *(unsigned *) get_arg(f, 2);
                        f->eax = create(file, initial_size);
                        break;
@@ -69,12 +78,20 @@ syscall_handler(struct intr_frame *f)
 
     case SYS_REMOVE: {
                        const char *file = *(char **) get_arg(f, 1);
+                       if (!is_user_vaddr(file))
+                       {
+                         exit(-1);
+                       }
                        f->eax = remove(file);
                        break;
                      }
 
     case SYS_OPEN: {
                      const char *file = *(char **) get_arg(f, 1);
+                     if (!is_user_vaddr(file))
+                     {
+                       exit(-1);
+                     }
                      f->eax = open(file);
                      break;
                    }
@@ -86,16 +103,24 @@ syscall_handler(struct intr_frame *f)
                        }
 
     case SYS_READ: {
-                     int fd = *(int *) get_arg(f, 1);
-                     void *buffer = *(void **) get_arg(f, 2);
-                     unsigned size = *(unsigned *) get_arg(f, 3);
-                     f->eax = read(fd, buffer, size);
-                     break;
+                      int fd = *(int *) get_arg(f, 1);
+                      void *buffer = *(void **) get_arg(f, 2);
+                      if (!is_user_vaddr(buffer))
+                      {
+                       exit(-1);
+                      }
+                      unsigned size = *(unsigned *) get_arg(f, 3);
+                      f->eax = read(fd, buffer, size);
+                      break;
                    }
 
     case SYS_WRITE: {
                       int fd = *(int *) get_arg(f, 1);
                       const void *buffer = *(void **) get_arg(f, 2);
+                      if (!is_user_vaddr(buffer))
+                      {
+                        exit(-1);
+                      }
                       unsigned size = *(unsigned *) get_arg(f, 3);
                       f->eax = write(fd, buffer, size);
                       break;
