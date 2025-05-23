@@ -18,10 +18,13 @@ static void
 syscall_handler (struct intr_frame *f) 
 {
   printf("system call!\n");
+  printf("%d\n",SYS_EXIT);
   void **esp = &f->esp;
+  printf("esp:%p\n",*esp);
   int inter_id = * (int *)*esp;
-  *esp += sizeof(int*);
-  switch (inter_id)
+  printf("inter_id:%d\n",inter_id);
+  printf("BOUBOU\n");
+  switch (1)
   {
     case SYS_HALT:
       halt();
@@ -29,8 +32,9 @@ syscall_handler (struct intr_frame *f)
 
     case SYS_EXIT:
     {
-      int arg1 = * (int *)*esp;
+      printf("RATATTTATATATA\n");
       *esp += sizeof(int);
+      int arg1 = * (int *)*esp;
       exit(arg1);
       break;
     }
@@ -96,6 +100,7 @@ syscall_handler (struct intr_frame *f)
 
     case SYS_FILESIZE:
     {
+      printf("TA AGSAGASDG\n");
       int arg1 = * (int *) *esp;
       *esp += sizeof(int);
 
@@ -186,7 +191,7 @@ void exit (int status){
   struct thread* cur = thread_current();
   struct thread* parent = cur->parent;
   cur->exit_code = status;
-  if (cur->parent == NULL){
+  if (cur->parent != NULL){
       struct thread* child;
       struct list_elem *e;
       for (e = list_begin(&parent->children); e != list_end(&parent->children);e = list_next(e)){

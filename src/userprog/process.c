@@ -58,9 +58,9 @@ static int setup_user_stack(void **esp,const char *cmd)
   char *save_ptr;
   size_t argc = 0;
 
-  char* token = strtok_r (cmd, " ", &save_ptr); // Skip process name
+  char* token;// = strtok_r (cmd, " ", &save_ptr); // Skip process name
 
-  for (token = strtok_r (NULL, " ", &save_ptr); token != NULL; token = strtok_r (NULL, " ", &save_ptr))
+  for (token = strtok_r (cmd, " ", &save_ptr); token != NULL; token = strtok_r (NULL, " ", &save_ptr))
   {
     printf("%s : argc= %d, thread_name : %s\n",token,argc,thread_current()->name);
     *esp -= strlen(token)+1;
@@ -78,7 +78,7 @@ static int setup_user_stack(void **esp,const char *cmd)
   size_t i = argc;
   while (i > 0)
   {
-    //printf("%s,ptr =0x%o, i=%d\n",args[i-1],&args[i-1],i-1);
+    printf("%s,ptr =0x%o, i=%d\n",args[i-1],&args[i-1],i-1);
     *esp -= sizeof(char**);
 
     memcpy(*esp, &args[i-1], sizeof(char**)); // + 1 for NULL at the end of the string
@@ -90,16 +90,16 @@ static int setup_user_stack(void **esp,const char *cmd)
   token = *esp;
   *esp-=sizeof(char**);
   memcpy(*esp,&token,sizeof(char**));
-  //printf("0x%p\n",&token);
+  printf("0x%p\n",&token);
   *esp -= sizeof(int);
   memcpy(*esp, &argc, sizeof(int));
-  //printf("0x%p\n",&argc);
+  printf("0x%p\n",&argc);
   
   // Fake return address
-  args[argc] = 0;
+  args[argc] = 0xBEAF;
   *esp -= sizeof(int);
   memcpy(*esp, &args[argc], sizeof(int));
-  //printf("0x%p\n",&args[argc]);
+  printf("0x%p\n",&args[argc]);
   return 0;
 }
 
