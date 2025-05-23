@@ -17,9 +17,10 @@ syscall_init (void)
 static void
 syscall_handler (struct intr_frame *f) 
 {
+  printf("system call!\n");
   void **esp = &f->esp;
   int inter_id = * (int *)*esp;
-  *esp += sizeof(int);
+  *esp += sizeof(int*);
   switch (inter_id)
   {
     case SYS_HALT:
@@ -174,20 +175,6 @@ syscall_handler (struct intr_frame *f)
       close(arg1);
       break;
     }
-  }
-
-  printf ("system call!\n");
-  int* p = f->esp;
-  int syscall = *p;
-
-  switch(syscall)
-  {
-    case SYS_EXIT:
-    exit(*(p+1));
-    break;
-    default:
-  	exit(1);
-    break;
   }
 }
 

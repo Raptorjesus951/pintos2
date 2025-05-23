@@ -125,9 +125,6 @@ start_process (void *file_name_)
     thread_exit ();
   }
 
-  if(setup_user_stack(&if_.esp, file_name))
-    thread_exit();
-
   /* Start the user process by simulating a return from an
      interrupt, implemented by intr_exit (in
      threads/intr-stubs.S).  Because intr_exit takes all of its
@@ -158,7 +155,7 @@ process_wait (tid_t child_tid )
     child = list_entry(e, struct thread, elem);
     if (child->tid == child_tid){
     cur->id_wait = child_tid;
-    if (child->used)
+    if (!child->used)
       sema_down(&cur->children_sema);
     int exit_code = child->exit_code;
     list_remove(e);
