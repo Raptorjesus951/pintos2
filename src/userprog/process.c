@@ -42,7 +42,7 @@ process_execute (const char *file_name)
   char *save_ptr;
   char *thread_name = fn_copy + strlen(fn_copy)+1;
   strlcpy(thread_name,fn_copy,strlen(file_name)+1);
-  printf("%s\n",thread_name);
+  //printf("%s\n",thread_name);
   thread_name = strtok_r(thread_name," ",&save_ptr);
   /* Create a new thread to execute FILE_NAME. */
   tid = thread_create (thread_name, PRI_DEFAULT, start_process, fn_copy);
@@ -62,7 +62,7 @@ static int setup_user_stack(void **esp,const char *cmd)
 
   for (token = strtok_r (cmd, " ", &save_ptr); token != NULL; token = strtok_r (NULL, " ", &save_ptr))
   {
-    printf("%s : argc= %d, thread_name : %s\n",token,argc,thread_current()->name);
+    //printf("%s : argc= %d, thread_name : %s\n",token,argc,thread_current()->name);
     *esp -= strlen(token)+1;
     args[argc] = *esp;
     if (argc >= ARGS_MAX)
@@ -78,7 +78,7 @@ static int setup_user_stack(void **esp,const char *cmd)
   size_t i = argc;
   while (i > 0)
   {
-    printf("%s,ptr =0x%o, i=%d\n",args[i-1],&args[i-1],i-1);
+    //printf("%s,ptr =0x%o, i=%d\n",args[i-1],&args[i-1],i-1);
     *esp -= sizeof(char**);
 
     memcpy(*esp, &args[i-1], sizeof(char**)); // + 1 for NULL at the end of the string
@@ -90,16 +90,16 @@ static int setup_user_stack(void **esp,const char *cmd)
   token = *esp;
   *esp-=sizeof(char**);
   memcpy(*esp,&token,sizeof(char**));
-  printf("0x%p\n",&token);
+  //printf("0x%p\n",&token);
   *esp -= sizeof(int);
   memcpy(*esp, &argc, sizeof(int));
-  printf("0x%p\n",&argc);
+  //printf("0x%p\n",&argc);
   
   // Fake return address
   args[argc] = 0xBEAF;
   *esp -= sizeof(int);
   memcpy(*esp, &args[argc], sizeof(int));
-  printf("0x%p\n",&args[argc]);
+  //printf("0x%p\n",&args[argc]);
   return 0;
 }
 
@@ -149,17 +149,18 @@ process_wait (tid_t child_tid )
 {
   struct thread* cur = thread_current();
 
-  struct thread* child;
+  struct info_child* child;
   struct list_elem *e;
   for (e = list_begin(&cur->children); e != list_end(&cur->children);e = list_next(e)){
-    child = list_entry(e, struct thread, elem);
+    child = list_entry(e, struct info_child, child_elem);
     if (child->tid == child_tid){
     cur->id_wait = child_tid;
     if (!child->used)
       sema_down(&cur->children_sema);
-    int exit_code = child->exit_code;
     list_remove(e);
-    return exit_code;
+    int exit_code = child->exit_code;
+    free(child);
+    return exit_code; 
     }
   }
   return -1;

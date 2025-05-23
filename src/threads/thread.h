@@ -101,17 +101,22 @@ struct thread
     uint32_t *pagedir;                  /* Page directory. */
 #endif
 
+    int exit_code;                      /*thread's exit code*/
+    struct list children; // list of struct child_status
+    struct semaphore children_sema; 
+    tid_t id_wait; //id of the child who the process wait
+
+    struct thread* parent; // parent thread
+
     /* Owned by thread.c. */
     unsigned magic;                     /* Detects stack overflow. */
-    int exit_code;                      /*thread's exit code*/
-
-    struct semaphore children_sema; 
-    struct list children; // list of struct child_status
-    struct thread* parent; // parent thread
-    tid_t id_wait; //id of the child who the process wait
-    int used;
   };
-
+struct info_child{
+    struct list_elem child_elem;              /* List element. */
+    int used;
+    int exit_code;                      /*thread's exit code*/
+    tid_t tid;                          /* Thread identifier. */
+};
 
 
 /* If false (default), use round-robin scheduler.

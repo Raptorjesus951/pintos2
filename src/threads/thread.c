@@ -190,7 +190,10 @@ thread_create (const char *name, int priority,
   tid = t->tid = allocate_tid ();
   t->parent = thread_current();
 
-  list_push_back(&thread_current()->children,&t->elem);
+  struct info_child* info = malloc(sizeof(struct info_child));
+  info->used = 0;
+  info->tid = tid;
+  list_push_back(&thread_current()->children,&info->child_elem);
   /* Prepare thread for first run by initializing its stack.
      Do this atomically so intermediate values for the 'stack' 
      member cannot be observed. */
@@ -494,8 +497,8 @@ init_thread (struct thread *t, const char *name, int priority)
   t->stack = (uint8_t *) t + PGSIZE;
   t->priority = priority;
   t->magic = THREAD_MAGIC;
-  list_push_back (&all_list, &t->allelem);
   list_init(&t->children);
+  list_push_back (&all_list, &t->allelem);
   sema_init(&t->children_sema,0);
 }
 
