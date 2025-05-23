@@ -34,7 +34,7 @@ static void
 syscall_handler(struct intr_frame *f)
 {
   int syscall_number = *(int *)f->esp;
-  printf("System call number: %d\n", syscall_number);
+  //printf("System call number: %d\n", syscall_number);
 
   switch (syscall_number)
   {
@@ -137,18 +137,20 @@ void exit (int status){
   struct thread* parent = cur->parent;
   cur->exit_code = status;
   if (cur->parent != NULL){
-    struct thread* child;
+    struct info_child* child;
     struct list_elem *e;
     for (e = list_begin(&parent->children); e != list_end(&parent->children);e = list_next(e)){
-      child = list_entry(e, struct thread, elem);
+      child = list_entry(e, struct info_child, child_elem);
       if (child->tid == cur->tid)
         break;
     }
     if (e != list_end(&parent->children)){
-      cur->used=0;
+      child->used=0;
 
-      if (parent->id_wait == cur->tid)
+      if (parent->id_wait == cur->tid){
+	child->exit_code = status;
         sema_up(&parent->children_sema);
+ 	}	
     }
   }
   thread_exit();

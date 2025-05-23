@@ -115,7 +115,12 @@ struct thread
     /* Owned by thread.c. */
     unsigned magic;                     /* Detects stack overflow. */
   };
-
+struct info_child{
+    struct list_elem child_elem;              /* List element. */
+    int used;
+    int exit_code;                      /*thread's exit code*/
+    tid_t tid;                          /* Thread identifier. */
+};
 
 
 /* If false (default), use round-robin scheduler.
