@@ -2,6 +2,18 @@
 #define USERPROG_SYSCALL_H
 
 #include "../threads/thread.h"
+#include "../threads/synch.h"
+
+#include "filesys/filesys.h"
+
+#include <list.h>
+
+struct file_desc
+{
+  struct file * file;
+  int fd;
+  struct list_elem elem;
+};
 
 void syscall_init (void);
 
