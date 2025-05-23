@@ -19,7 +19,8 @@ syscall_handler (struct intr_frame *f)
 {
   void **esp = &f->esp;
   int inter_id = * (int *)*esp;
-  *esp += sizeof(int);
+  printf("esp: %p, inter_id:%d\n",*esp,inter_id);
+  *esp += sizeof(int*);
   switch (inter_id)
   {
     case SYS_HALT:
