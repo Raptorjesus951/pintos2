@@ -28,7 +28,7 @@ syscall_init (void)
 static void *
 get_arg(struct intr_frame *f, int index)
 {
-  return (void *)((uint32_t *) f->esp + index);
+  return (void *)((int *) f->esp + index);
 }
 
 static void
