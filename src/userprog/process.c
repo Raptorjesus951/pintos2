@@ -48,6 +48,53 @@ process_execute (const char *file_name)
   tid = thread_create (thread_name, PRI_DEFAULT, start_process, fn_copy);
   if (tid == TID_ERROR)
     palloc_free_page (fn_copy); 
+
+  struct thread* cur = thread_current();
+  sema_down(&cur->exec_sema);
+  
+  struct list_elem *e;
+  for (e = list_begin(&cur->children); e != list_end(&cur->children);e = list_next(e)){
+    child = list_entry(e, struct info_child, child_elem);
+    if (child->tid == tid){
+        int exit_code = child->exit_code;
+	if (exit_code == -1)
+	  return -1;
+    }
+  }
+  return tid;
+}
+
+/* Free the current process's resources. */
+void
+process_exit (void)
+{
+  struct thread *cur = thread_current ();
+  uint32_t *pd;
+
+  /* Destroy the current process's page directory and switch back
+     to the kernel-only page directory. */
+  printf("%s: exit(%d)\n", cur->name, cur->exit_code);
+  pd = cur->pagedir;
+  if (pd != NULL) 
+    {
+      /* Correct ordering here is crucial.  We must set
+         cur->pagedir to NULL before switching page directories,
+         so that a timer interrupt can't switch back to the
+         process page directory.  We must activate the base page
+         directory before destroying the process's page
+         directory, or our active page directory will be one
+         that's been freed (and cleared). */
+      cur->pagedir = NULL;
+      pagedir_activate (NULL);
+      pagedir_destroy (pd);
+    }
+}
+
+/* Sets up the CPU for running user code in the current
+   thread.
+   This function is called on every context switch. */
+void
+
   return tid;
 }
 
@@ -121,8 +168,12 @@ start_process (void *file_name_)
   /* If load failed, quit. */
   palloc_free_page (file_name);
   if (!success) {
+    thread_current()->exit_code = -1;
+    thread_current()->info->exit_code = -1;
+    sema_up(&thread_current()->parent->exec_sema);
     thread_exit ();
   }
+  sema_up(&thread_current()->parent->exec_sema);
 
   /* Start the user process by simulating a return from an
      interrupt, implemented by intr_exit (in
@@ -308,12 +359,13 @@ load (const char *file_name, void (**eip) (void), void **esp)
 
   /* Open executable file. */
   file = filesys_open (fn_copy);
-  free(fn_copy);
   if (file == NULL) 
     {
       printf ("load: %s: open failed\n", file_name);
+      free(fn_copy);
       goto done; 
     }
+  free(fn_copy);
 
   /* Read and verify executable header. */
   if (file_read (file, &ehdr, sizeof ehdr) != sizeof ehdr
