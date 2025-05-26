@@ -14,6 +14,7 @@
 #include "filesys/file.h"
 
 static void syscall_handler (struct intr_frame *);
+static void* get_arg(struct intr_frame *f,int index);
 struct file * fd_to_file(int fd);
 
 struct lock syscall_lock;
@@ -71,12 +72,12 @@ syscall_handler(struct intr_frame *f)
                    }
 
     case SYS_CREATE: {
-                       const char *file = *(char **) get_arg(f, 1);
+                       const char *file = *(char **) get_arg(f, 4);
                        if (!is_user_vaddr(file))
                        {
                          exit(-1);
                        }
-                       unsigned initial_size = *(unsigned *) get_arg(f, 2);
+                       unsigned initial_size = *(unsigned *) get_arg(f, 5);
                        f->eax = create(file, initial_size);
                        break;
                      }
@@ -108,32 +109,32 @@ syscall_handler(struct intr_frame *f)
                        }
 
     case SYS_READ: {
-                      int fd = *(int *) get_arg(f, 1);
-                      void *buffer = *(void **) get_arg(f, 2);
+                      int fd = *(int *) get_arg(f, 5);
+                      void *buffer = *(void **) get_arg(f, 6);
                       if (!is_user_vaddr(buffer))
                       {
                        exit(-1);
                       }
-                      unsigned size = *(unsigned *) get_arg(f, 3);
+                      unsigned size = *(unsigned *) get_arg(f, 7);
                       f->eax = read(fd, buffer, size);
                       break;
                    }
 
     case SYS_WRITE: {
-                      int fd = *(int *) get_arg(f, 1);
-                      const void *buffer = *(void **) get_arg(f, 2);
+                      int fd = *(int *) get_arg(f, 5);
+                      const void *buffer = *(void **) get_arg(f, 6);
                       if (!is_user_vaddr(buffer))
                       {
                         exit(-1);
                       }
-                      unsigned size = *(unsigned *) get_arg(f, 3);
+                      unsigned size = *(unsigned *) get_arg(f, 7);
                       f->eax = write(fd, buffer, size);
                       break;
                     }
 
     case SYS_SEEK: {
-                     int fd = *(int *) get_arg(f, 1);
-                     unsigned position = *(unsigned *) get_arg(f, 2);
+                     int fd = *(int *) get_arg(f, 4);
+                     unsigned position = *(unsigned *) get_arg(f, 5);
                      seek(fd, position);
                      break;
                    }
