@@ -46,13 +46,16 @@ process_execute (const char *file_name)
   thread_name = strtok_r(thread_name," ",&save_ptr);
   /* Create a new thread to execute FILE_NAME. */
   tid = thread_create (thread_name, PRI_DEFAULT, start_process, fn_copy);
-  if (tid == TID_ERROR)
+  if (tid == TID_ERROR){
     palloc_free_page (fn_copy); 
+    return tid;
+  }
 
   struct thread* cur = thread_current();
   sema_down(&cur->exec_sema);
   
   struct list_elem *e;
+  struct info_child* child;
   for (e = list_begin(&cur->children); e != list_end(&cur->children);e = list_next(e)){
     child = list_entry(e, struct info_child, child_elem);
     if (child->tid == tid){
@@ -61,40 +64,6 @@ process_execute (const char *file_name)
 	  return -1;
     }
   }
-  return tid;
-}
-
-/* Free the current process's resources. */
-void
-process_exit (void)
-{
-  struct thread *cur = thread_current ();
-  uint32_t *pd;
-
-  /* Destroy the current process's page directory and switch back
-     to the kernel-only page directory. */
-  printf("%s: exit(%d)\n", cur->name, cur->exit_code);
-  pd = cur->pagedir;
-  if (pd != NULL) 
-    {
-      /* Correct ordering here is crucial.  We must set
-         cur->pagedir to NULL before switching page directories,
-         so that a timer interrupt can't switch back to the
-         process page directory.  We must activate the base page
-         directory before destroying the process's page
-         directory, or our active page directory will be one
-         that's been freed (and cleared). */
-      cur->pagedir = NULL;
-      pagedir_activate (NULL);
-      pagedir_destroy (pd);
-    }
-}
-
-/* Sets up the CPU for running user code in the current
-   thread.
-   This function is called on every context switch. */
-void
-
   return tid;
 }
 
@@ -205,7 +174,7 @@ process_wait (tid_t child_tid )
     child = list_entry(e, struct info_child, child_elem);
     if (child->tid == child_tid){
     cur->id_wait = child_tid;
-    if (!child->used)
+    if (child->used != 0)
       sema_down(&cur->children_sema);
     list_remove(e);
     int exit_code = child->exit_code;

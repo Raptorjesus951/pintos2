@@ -100,6 +100,8 @@ struct thread
     int exit_code;                      /*thread's exit code*/
 
     struct semaphore children_sema; 
+    struct semaphore exec_sema; 
+    struct info_child* info; //thread info
     struct list children; // list of struct child_status
     struct thread* parent; // parent thread
     tid_t id_wait; //id of the child who the process wait
