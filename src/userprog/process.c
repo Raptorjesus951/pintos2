@@ -46,8 +46,10 @@ process_execute (const char *file_name)
   thread_name = strtok_r(thread_name," ",&save_ptr);
   /* Create a new thread to execute FILE_NAME. */
   tid = thread_create (thread_name, PRI_DEFAULT, start_process, fn_copy);
-  if (tid == TID_ERROR)
+  if (tid == TID_ERROR){
     palloc_free_page (fn_copy); 
+    return tid;
+  }
 
   struct thread* cur = thread_current();
   sema_down(&cur->exec_sema);
@@ -135,8 +137,8 @@ start_process (void *file_name_)
   /* If load failed, quit. */
   palloc_free_page (file_name);
   if (!success) {
-    thread_current()->exit_code= -1;
-    thread_current()->info->exit_code= -1;
+    thread_current()->exit_code = -1;
+    thread_current()->info->exit_code = -1;
     sema_up(&thread_current()->parent->exec_sema);
     thread_exit ();
   }
@@ -172,7 +174,7 @@ process_wait (tid_t child_tid )
     child = list_entry(e, struct info_child, child_elem);
     if (child->tid == child_tid){
     cur->id_wait = child_tid;
-    if (!child->used)
+    if (child->used != 0)
       sema_down(&cur->children_sema);
     list_remove(e);
     int exit_code = child->exit_code;
@@ -207,6 +209,7 @@ process_exit (void)
       pagedir_activate (NULL);
       pagedir_destroy (pd);
     }
+  cur->info->used = 0;
 }
 
 /* Sets up the CPU for running user code in the current
@@ -326,12 +329,13 @@ load (const char *file_name, void (**eip) (void), void **esp)
 
   /* Open executable file. */
   file = filesys_open (fn_copy);
-  free(fn_copy);
   if (file == NULL) 
     {
       printf ("load: %s: open failed\n", file_name);
+      free(fn_copy);
       goto done; 
     }
+  free(fn_copy);
 
   /* Read and verify executable header. */
   if (file_read (file, &ehdr, sizeof ehdr) != sizeof ehdr

@@ -4,6 +4,7 @@
 #include "threads/interrupt.h"
 #include "threads/thread.h"
 #include "threads/vaddr.h"
+#include "threads/malloc.h"
 
 #include "devices/shutdown.h"
 #include "devices/input.h"
@@ -71,12 +72,12 @@ syscall_handler(struct intr_frame *f)
                    }
 
     case SYS_CREATE: {
-                       const char *file = *(char **) get_arg(f, 1);
+                       const char *file = *(char **) get_arg(f, 4);
                        if (!is_user_vaddr(file))
                        {
                          exit(-1);
                        }
-                       unsigned initial_size = *(unsigned *) get_arg(f, 2);
+                       unsigned initial_size = *(unsigned *) get_arg(f, 5);
                        f->eax = create(file, initial_size);
                        break;
                      }
@@ -120,13 +121,13 @@ syscall_handler(struct intr_frame *f)
                    }
 
     case SYS_WRITE: {
-                      int fd = *(int *) get_arg(f, 1);
-                      const void *buffer = *(void **) get_arg(f, 2);
+                      int fd = *(int *) get_arg(f, 5);
+                      const void *buffer = *(void **) get_arg(f, 6);
                       if (!is_user_vaddr(buffer))
                       {
                         exit(-1);
                       }
-                      unsigned size = *(unsigned *) get_arg(f, 3);
+                      unsigned size = *(unsigned *) get_arg(f, 7);
                       f->eax = write(fd, buffer, size);
                       break;
                     }
@@ -167,22 +168,13 @@ void exit (int status){
   struct thread* parent = cur->parent;
   cur->exit_code = status;
   if (cur->parent != NULL){
-    struct info_child* child;
-    struct list_elem *e;
-    for (e = list_begin(&parent->children); e != list_end(&parent->children);e = list_next(e)){
-      child = list_entry(e, struct info_child, child_elem);
-      if (child->tid == cur->tid)
-        break;
-    }
-    if (e != list_end(&parent->children)){
+    struct info_child* child = cur->info;
       child->used=0;
-
       if (parent->id_wait == cur->tid){
 	child->exit_code = status;
         sema_up(&parent->children_sema);
  	}	
     }
-  }
   thread_exit();
 } 
 
@@ -225,8 +217,6 @@ bool remove(const char * name)
 
 int open (const char * fn)
 {
-  if(!fn)
-    return -1;
 
   lock_acquire(&syscall_lock);
   struct file * f = filesys_open(fn);
@@ -235,14 +225,14 @@ int open (const char * fn)
   if(!f)
     return -1;
 
-  struct file_desc fd;
-  fd.file = f;
+  struct file_desc *fd = malloc(sizeof(struct file_desc));
+  fd->file = f;
   struct thread *t = thread_current();
   t->next_fd++;
-  fd.fd = t->next_fd;
-  list_push_front(&t->open_files, &fd.elem);
+  fd->fd = t->next_fd;
+  list_push_front(&t->open_files, &fd->elem);
 
-  return fd.fd;
+  return fd->fd;
 }
 
 int filesize (int fd)
@@ -337,11 +327,12 @@ void close (int fd)
 
   while(e != list_tail(&t->open_files))
   {
-    struct file_desc file_d = *list_entry(e, struct file_desc, elem);
-    if(file_d.fd == fd)
+    struct file_desc *file_d = list_entry(e, struct file_desc, elem);
+    if(file_d->fd == fd)
     {
-      file_close(file_d.file);
+      file_close(file_d->file);
       list_remove(e);
+      free(file_d);
       return;
     }
     e = list_next(e);

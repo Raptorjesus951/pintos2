@@ -191,7 +191,7 @@ thread_create (const char *name, int priority,
   t->parent = thread_current();
 
   struct info_child* info = malloc(sizeof(struct info_child));
-  info->used = 0;
+  info->used = 1;
   info->tid = tid;
   info->exit_code = 0;
   list_push_back(&thread_current()->children,&info->child_elem);
