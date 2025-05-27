@@ -193,7 +193,9 @@ thread_create (const char *name, int priority,
   struct info_child* info = malloc(sizeof(struct info_child));
   info->used = 0;
   info->tid = tid;
+  info->exit_code = 0;
   list_push_back(&thread_current()->children,&info->child_elem);
+  t->info = info;
   /* Prepare thread for first run by initializing its stack.
      Do this atomically so intermediate values for the 'stack' 
      member cannot be observed. */
@@ -502,6 +504,7 @@ init_thread (struct thread *t, const char *name, int priority)
   t->next_fd = 0;
   list_push_back (&all_list, &t->allelem);
   sema_init(&t->children_sema,0);
+  sema_init(&t->exec_sema,0);
 }
 
 /* Allocates a SIZE-byte frame at the top of thread T's stack and
