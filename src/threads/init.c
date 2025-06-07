@@ -22,6 +22,7 @@
 #include "threads/palloc.h"
 #include "threads/pte.h"
 #include "threads/thread.h"
+#include "vm/frame.h"
 #ifdef USERPROG
 #include "userprog/process.h"
 #include "userprog/exception.h"
@@ -106,6 +107,8 @@ main (void)
 #endif
 
   /* Initialize interrupt handlers. */
+
+  frame_table_init();
   intr_init ();
   timer_init ();
   kbd_init ();

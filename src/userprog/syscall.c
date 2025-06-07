@@ -43,6 +43,9 @@ int sys_write(int fd, const void *buffer, unsigned size);
 
 struct lock filesys_lock;
 
+mapid_t mmap(int fd, void* addr);
+void munmap(mapid_t mapping);
+
 void
 syscall_init (void)
 {
@@ -512,3 +515,98 @@ find_file_desc(struct thread *t, int fd)
 
   return NULL;
 }
+
+
+mapid_t mmap(int fd, void* addr){
+  if (addr == NULL|| pg_ofs(addr) ==0)
+    return -1;
+
+  struct file_desc* file_d = find_file_desc(thread_current(), fd);
+  if (file_d == NULL)
+    return -1;
+  lock_acquire (&filesys_lock);
+  strutc file* f = file_reopen(file_d->file);
+
+  if (f == NULL){
+    lock_release(&filesys_lock);
+    return -1;
+  }
+
+  int size  = file_length(f);
+  if (size == 0){
+    lock_release(&filesys_lock);
+    return -1;
+  }
+  int offset;
+  for (offset = 0; offset < size; offset+=PGSIZE){
+    void*file_address = addr + offset;
+    if (0){ // TODO check if has a vm_entry 
+       lock_release(&filesys_lock);
+       return -1;
+    }
+  }
+  for (offset = 0; offset < size; offset += PGSIZE) {
+    void *file_address = addr + offset;
+
+    size_t read_bytes = (offset + PGSIZE < size ? PGSIZE : size - offset);
+    size_t zero_bytes = PGSIZE - read_bytes;
+
+/*
+ * Install a new page 
+ * on the supplemental page table, of type FROM_FILESYS.
+ * writable
+ */
+  }
+
+  mapid_t id;
+  if (!list_empty(&thread_current()->mmap_list)) {
+    id = list_entry(list_back(&curr->mmap_list), struct mmap_desc, elem)->id + 1;
+  }
+  else 
+    id = 1;
+
+  struct mmap_info *mmap = (struct mmap_desc*) malloc(sizeof(struct mmap_desc));
+  mmap->id = id;
+  mmap->file = f;
+  mmap->addr = upage;
+  mmap->file_size = size;
+  list_push_back (&curr->mmap_list, &mmap->elem);
+  
+    // OK, release and return the mid
+  lock_release (&filesys_lock);
+  return mid;
+
+}
+void munmap(mapid_t mapping){
+  struct mmap_info *info;
+  struct list_elem *e;
+
+  if (! list_empty(&t->mmap_list)) {
+    for(e = list_begin(&t->mmap_list);
+        e != list_end(&t->mmap_list); e = list_next(e))
+    {
+      info = list_entry(e, struct mmap_info; elem);
+      if(info->id == mapping) {
+        break;
+      }
+    }
+  }
+  if (info == NULL)
+    return;
+  lock_aquire(&filesys_lock);
+  int file_size = info->file_size;
+  int offset;
+  for (offset=0; offset < file_size; offset+=PGSIZE){
+    void *file_address = info->addr + offset;
+    size_t bytes = (offset + PGSIZE < file_size ? PGSIZE : file_size - offset);
+    /*vm unmap so delete from hash map*/
+  }
+  list_remove(& mmap_d->elem);
+  file_close(mmap_d->file);
+  free(mmap_d);
+  
+  lock_release (&filesys_lock);
+
+  return; 
+}
+
