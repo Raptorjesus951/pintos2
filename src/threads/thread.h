@@ -5,6 +5,8 @@
 #include <list.h>
 #include <stdint.h>
 
+#include "lib/kernel/hash.h"
+
 /* States in a thread's life cycle. */
 enum thread_status
   {
@@ -115,6 +117,8 @@ struct thread
 
     struct file *executing_file;        /* The executable file of associated process. */
 #endif
+
+    struct hash spt;
 
     /* Owned by thread.c. */
     unsigned magic;                     /* Detects stack overflow. */
