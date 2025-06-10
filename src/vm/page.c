@@ -72,7 +72,7 @@ bool handle_page_fault(struct hash *spt, void *fault_addr)
       break;
   
     case PAGE_STACK:
-      return spt_grow_stack(spt, kpage);
+      return spt_grow_stack(spt, fault_addr);
 
     default:
       return false;
