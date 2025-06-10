@@ -109,12 +109,14 @@ main (void)
 
   /* Initialize interrupt handlers. */
 
-  frame_table_init();
   intr_init ();
   timer_init ();
   kbd_init ();
   input_init ();
+#ifdef VM
   bitmap_init();
+  frame_table_init();
+#endif
 #ifdef USERPROG
   exception_init ();
   syscall_init ();
