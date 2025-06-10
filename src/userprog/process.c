@@ -18,7 +18,7 @@
 #include "threads/palloc.h"
 #include "threads/thread.h"
 #include "threads/vaddr.h"
-
+#include "vm/page.h"
 
 #ifdef DEBUG
 #define _DEBUG_PRINTF(...) printf(__VA_ARGS__)
@@ -117,6 +117,7 @@ static void
 start_process (void *pcb_)
 {
   struct thread *t = thread_current();
+  spt_init(&t->spt);
   struct process_control_block *pcb = pcb_;
 
   char *file_name = (char*) pcb->cmdline;
@@ -329,6 +330,7 @@ process_exit (void)
     pagedir_activate (NULL);
     pagedir_destroy (pd);
   }
+  spt_destroy(&cur->spt);
 }
 
 /* Sets up the CPU for running user code in the current
