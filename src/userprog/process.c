@@ -19,6 +19,7 @@
 #include "threads/thread.h"
 #include "threads/vaddr.h"
 #include "vm/page.h"
+#include "vm/swap.h"
 #include "vm/stack.h"
 
 #ifdef DEBUG

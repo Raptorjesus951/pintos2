@@ -1,5 +1,6 @@
 #include "stack.h"
 #include "frame.h"
+#define STACK_MAX_SIZE 8000000
 
 stack_page_count = 0;
 

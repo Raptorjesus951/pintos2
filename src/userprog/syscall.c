@@ -531,7 +531,7 @@ struct mmap_desc {
 };
 
 int mmap(int fd, void* addr){
-  struct thread* cur = thread_current();
+  struct thread* curr = thread_current();
   if (addr == NULL|| pg_ofs(addr) ==0)
     return -1;
 
@@ -617,7 +617,7 @@ void munmap(mapid_t mapping) {
   struct list_elem *e;
 
   if (!list_empty(&t->mmaps)) {
-    for (e = list_begin(&t->mmap_list); e != list_end(&t->mmap_list); e = list_next(e)) {
+    for (e = list_begin(&t->mmaps); e != list_end(&t->mmaps); e = list_next(e)) {
       struct mmap_desc *entry = list_entry(e, struct mmap_desc, elem);
       if (entry->id == mapping) {
         desc = entry;
