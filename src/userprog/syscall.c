@@ -522,11 +522,11 @@ find_file_desc(struct thread *t, int fd)
 
 
 struct mmap_desc {
-  int id;
-  struct file *file;
-  void *addr;
-  int size;
-  struct list_elem elem;
+  int id;
+  struct file *file;
+  void *addr;
+  int size;
+  struct list_elem elem;
 };
 
 int mmap(int fd, void* addr){
@@ -555,7 +555,7 @@ int mmap(int fd, void* addr){
     struct spage spte_temp;
     spte_temp.upage = file_address;
 
-    struct hash_elem *e= hash_find (&thread_current()->spt, &spte_temp.elem);
+    struct hash_elem *e= hash_find (&thread_current()->spt, &spte_temp.hash_elem);
     if (e == NULL){
        lock_release(&filesys_lock);
        return -1;
