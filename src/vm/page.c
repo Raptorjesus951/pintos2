@@ -81,20 +81,20 @@ bool handle_page_fault(struct hash *spt, void *fault_addr)
   return true;
 }
 
-unsigned spage_hash(const struct hash_elem *e, void *aux UNUSED)
+unsigned spage_hash(const struct hash_elem *e, void *aux (UNUSED))
 {
   const struct spage *vm_entry = hash_entry(e, vm_entry, elem);
   return hash_bytes(&vm_entry->upage, sizeof(vm_entry->page));
 }
 
-bool spage_less(const struct hash_elem *a, const struct hash_elem *b, void *aux UNUSED)
+bool spage_less(const struct hash_elem *a, const struct hash_elem *b, void *aux (UNUSED))
 {
   const struct spage *vma = hash_entry(a, struct spage, elem);
   const struct spage *vmb = hash_entry(b, struct spage, elem);
   return vma->uaddr < vmb->uaddr;
 }
 
-void spage_destroy(struct hash_elem *elem, void *aux UNUSED)
+void spage_destroy(struct hash_elem *elem, void *aux (UNUSED))
 {
   struct spage *sp = hash_entry(elem, struct spage, hash_elem);
 
