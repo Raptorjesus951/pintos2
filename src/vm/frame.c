@@ -1,4 +1,3 @@
-#include <list.h>
 #include "lib/kernel/list.h"
 #include <hash.h>
 #include "lib/kernel/hash.h"
@@ -28,7 +27,7 @@ void* ftalloc(enum palloc_flags flags, void* addr, uint32_t* swindx){
 	void* kpage = palloc_get_page(PAL_USER|flags);
 	
 	if(kpage == NULL){
-		struct ft_entry* f_evicted = evicter(thread_current()->pagedir);
+		struct ft_entry* f_evicted = evicter(*thread_current()->pagedir);
 		ASSERT(f_evicted != NULL);
 		pagedir_clear_page(f_evicted->t->pagedir, f_evicted->upage);
 		
@@ -99,14 +98,14 @@ struct ft_entry* evicter(uint32_t pagedir){
 
     size_t num_checked = 0;
     size_t total_frames = list_size(&frame_list);
-
+    struct frame_entry *f;
     while (num_checked < total_frames * 2) { // At most two full passes
-        struct frame_entry *f = list_entry(clock_hand, struct ft_entry, elem);
+        f = list_entry(clock_hand, struct ft_entry, elem);
         clock_hand = list_next(clock_hand);
         if (clock_hand == list_end(&frame_list)) {
             clock_hand = list_begin(&frame_list);
         }
-    }
+    
 
         num_checked++;
 
