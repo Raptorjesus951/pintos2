@@ -1,8 +1,4 @@
-/src/filesys/
-/src/lib/
-/src/misc/
 /src/utils/
-/src/examples/
 /src/tests/
-/src/vm/
+/src/vm/build/
 /src/userprog/build/

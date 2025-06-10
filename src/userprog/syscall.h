@@ -1,22 +1,20 @@
 #ifndef USERPROG_SYSCALL_H
 #define USERPROG_SYSCALL_H
 
-#include "../threads/thread.h"
+#include "lib/kernel/list.h"
 
 void syscall_init (void);
 
-void halt(void);
-void exit(int);
-tid_t exec(const char *);
-int wait(tid_t);
-bool create (const char *, unsigned);
-bool remove(const char *);
-int open (const char *);
-int filesize (int);
-int read (int, void *, unsigned);
-int write (int,const void *, unsigned);
-void seek(int, unsigned);
-unsigned tell (int);
-void close (int);
+void sys_exit (int);
+
+typedef int mapid_t;
+
+struct mmap_info{
+  mapid_t id;
+  struct file* f;
+  void* addr;
+  int file_size;
+  struct list_elem elem;
+};
 
 #endif /* userprog/syscall.h */
