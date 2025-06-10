@@ -504,7 +504,7 @@ find_file_desc(struct thread *t, int fd)
   bool empty = list_empty(&t -> file_descriptors);
   if (!empty) {
     struct list_elem *e = list_begin(&t->file_descriptors);
-    for(e;e != list_end(&t->file_descriptors); e = list_next(e))
+    for(e; e != list_end(&t->file_descriptors); e = list_next(e))
     {
       struct file_desc *desc = list_entry(e, struct file_desc, elem);
       if(desc->id == fd) {
@@ -516,6 +516,14 @@ find_file_desc(struct thread *t, int fd)
   return NULL;
 }
 
+
+struct mmap_desc {
+  int id;
+  struct file *file;
+  void *addr;
+  int size;
+  struct list_elem elem;
+};
 
 int mmap(int fd, void* addr){
   if (addr == NULL|| pg_ofs(addr) ==0)
@@ -540,73 +548,76 @@ int mmap(int fd, void* addr){
   int offset;
   for (offset = 0; offset < size; offset+=PGSIZE){
     void*file_address = addr + offset;
-    if (0){ // TODO check if has a vm_entry 
+    struct spage spte_temp;
+    spte_temp.upage = file_address;
+
+    struct hash_elem *e= hash_find (&thread_current()->spt, &spte_temp.elem);
+    if (e == NULL){
        lock_release(&filesys_lock);
        return -1;
     }
   }
-  for (offset = 0; offset < size; offset += PGSIZE) {
-    void *file_address = addr + offset;
 
-    size_t read_bytes = (offset + PGSIZE < size ? PGSIZE : size - offset);
-    size_t zero_bytes = PGSIZE - read_bytes;
+  struct mmap_desc *mmap = malloc(sizeof(struct mmap_desc));
+  if (mmap == NULL) {
+    lock_release(&filesys_lock);
+    return -1;
+  }
 
-/*
- * Install a new page 
- * on the supplemental page table, of type FROM_FILESYS.
- * writable
- */
-  }
+  mmap->file = f;
+  mmap->addr = addr;
+  mmap->size = size;
+  mmap->id = list_empty(&curr->mmap_list) ? 1 :
+             list_entry(list_back(&curr->mmap_list), struct mmap_desc, elem)->id + 1;
 
-  int id;
-  if (!list_empty(&thread_current()->mmap_list)) {
-    id = list_entry(list_back(&curr->mmap_list), struct mmap_desc, elem)->id + 1;
-  }
-  else 
-    id = 1;
+  list_push_back(&curr->mmap_list, &mmap->elem);
 
-  struct mmap_info *mmap = (struct mmap_desc*) malloc(sizeof(struct mmap_desc));
-  mmap->id = id;
-  mmap->file = f;
-  mmap->addr = upage;
-  mmap->file_size = size;
-  list_push_back (&curr->mmap_list, &mmap->elem);
-  
-    // OK, release and return the mid
+  for (offset = 0; offset < size; offset += PGSIZE) {
+    void *file_address = addr + offset;
+    size_t read_bytes = (offset + PGSIZE < size ? PGSIZE : size - offset);
+    size_t zero_bytes = PGSIZE - read_bytes;
+
+    struct spage *spte = malloc(sizeof(struct spage));
+    if (spte == NULL) {
+      lock_release(&filesys_lock);
+      return -1;
+
+    }
+
+    spte->upage = file_address;
+    spte->kpage = NULL;
+    spte->type = FROM_FILESYS;
+    spte->write = true;
+    spte->loaded = false;
+    spte->file = f;
+    spte->offset = offset;
+    spte->read_bytes = read_bytes;
+    spte->zero_bytes = zero_bytes;
+
+    if (hash_insert(&curr->spt, spte->hash_elem) == NULL ) {
+      free(spte);
+      lock_release(&filesys_lock);
+      return -1;
+    }
+  }
   lock_release (&filesys_lock);
   return mid;
 
 }
-void munmap(mapid_t mapping){
-  struct mmap_info *info;
-  struct list_elem *e;
 
-  if (! list_empty(&t->mmap_list)) {
-    for(e = list_begin(&t->mmap_list);
-        e != list_end(&t->mmap_list); e = list_next(e))
-    {
-      info = list_entry(e, struct mmap_info; elem);
-      if(info->id == mapping) {
-        break;
-      }
-    }
-  }
-  if (info == NULL)
-    return;
-  lock_aquire(&filesys_lock);
-  int file_size = info->file_size;
-  int offset;
-  for (offset=0; offset < file_size; offset+=PGSIZE){
-    void *file_address = info->addr + offset;
-    size_t bytes = (offset + PGSIZE < file_size ? PGSIZE : file_size - offset);
-    /*vm unmap so delete from hash map*/
-  }
-  list_remove(& mmap_d->elem);
-  file_close(mmap_d->file);
-  free(mmap_d);
-  
-  lock_release (&filesys_lock);
+void munmap(mapid_t mapping) {
+  struct thread *t = thread_current();
+  struct mmap_desc *desc = NULL;
+  struct list_elem *e;
 
-  return; 
+  if (!list_empty(&t->mmap_list)) {
+    for (e = list_begin(&t->mmap_list); e != list_end(&t->mmap_list); e = list_next(e)) {
+      struct mmap_desc *entry = list_entry(e, struct mmap_desc, elem);
+      if (entry->id == mapping) {
+        desc = entry;
+        break;
+      }
+    }
+  }
 }
 
