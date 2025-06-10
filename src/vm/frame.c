@@ -10,12 +10,14 @@
 #include "threads/malloc.h"
 #include "userprog/pagedir.h"
 #include "threads/vaddr.h"
+#include "threads/synch.h"
 
 
 static struct list frame_list;
 static unsigned frame_hash_func(const struct hash_elem *elem, void *aux);
 static bool     frame_less_func(const struct hash_elem *, const struct hash_elem *, void *aux);
 static struct lock frame_lock;
+static struct ft_entry* evicter(uint32_t pagedir);
 
 void frame_table_init(){
 	list_init(&frame_list);
@@ -40,7 +42,7 @@ void* ftalloc(enum palloc_flags flags, void* addr, uint32_t* swindx){
 		if(swindx)
       *swindx = swap_idx;
 
-		ft_free(f_evicted->kpage,true);
+		ftfree(f_evicted->kpage,true);
 		kpage = palloc_get_page(PAL_USER|flags);
 		
     PANIC("Out of memory! Kernel panicted...");
@@ -129,7 +131,7 @@ struct ft_entry* evicter(uint32_t pagedir){
     lock_release(&frame_table_lock);
     return NULL; // No suitable frame found (unlikely unless all are pinned)
 }
-static void frame_set_pinned(void* kpage, bool valie){
+static void frame_set_pinned(void* kpage, bool value){
   lock_acquire (&frame_lock);
 
 
@@ -144,7 +146,7 @@ static void frame_set_pinned(void* kpage, bool valie){
   	PANIC("The page can't be found");
 	
   struct ft_entry* frame = list_entry(e, struct ft_entry, elem);
-  frame->pinned = new_value;
+  frame->pinned = value;
 
   lock_release (&frame_lock);
 }

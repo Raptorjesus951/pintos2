@@ -15,6 +15,6 @@ struct ft_entry{
 
 void frame_table_init(void);
 void* ftalloc(enum palloc_flags flags, void* addr, uint32_t* swindx);
-void ftfree(void* kpage);
+void ftfree(void* kpage,bool value);
 
 #endif
