@@ -12,6 +12,10 @@
 #include "threads/vaddr.h"
 #include "threads/synch.h"
 #include "lib/kernel/list.h"
+#include "vm/page.h"
+#include "vm/stack.h"
+#include "vm/frame.h"
+#include "vm/swap.h"
 
 #define STDIN 0
 #define STDOUT 1
