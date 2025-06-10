@@ -1,22 +1,27 @@
 #include "stack.h"
+#include "frame.h"
 
-bool spt_grow_stack(struct hash *spt, void *fault_addr)
+stack_page_count = 0;
+
+bool spt_grow_stack(struct hash *spt, void *kpage)
 {
-  void *upage = pg_round_down(fault_addr);
-  void *kpage = palloc_get_page(PAL_USER);
-  if(kpage == NULL)
+  if(stack_page_count * PAGE_SIZE >= STACK_MAX_SIZE)
     return false;
-
-  if(!pagedir_set_page(thread_current()->pagedir, upage, kpage, true))
-  {
-    palloc_free_page(kpage);
-    return false;
-  }
 
   struct spage *sp = malloc(sizeof(spage));
+  if(!sp)
+    return false;
   sp->upage = upage;
   sp->type = PAGE_STACK;
   sp->write = true;
+ 
+  void *upage = pg_round_down(fault_addr);
+  void *kpage = ftalloc(PAL_USER, upage, &sp->swap_index);
+  if(kpage)
+  {
+    free(sp);
+    return false;
+  }
   spt_insert(spt, sp);
   return true;
 }

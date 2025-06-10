@@ -32,7 +32,7 @@ void frame_table_init(){
 	lock_init(&frame_lock);
 }
 
-void* ftalloc(enum palloc_flags flags, void* addr){
+void* ftalloc(enum palloc_flags flags, void* addr, uint32_t* swindx){
 
 	lock_acquire(&frame_lock);
 	void* kpage = palloc_get_page(PAL_USER|flags);
@@ -47,10 +47,13 @@ void* ftalloc(enum palloc_flags flags, void* addr){
 		is_dirty = is_dirty || pagedir_is_dirty(f_evicted->t->pagedir, f_evicted->kpage);
 		
 		uint32_t swap_idx = swap_out( f_evicted->kpage );
-		
+		if(swindx)
+      *swindx = swap_idx;
+
 		ft_free(f_evicted->kpage,true);
 		kpage = palloc_get_page(PAL_USER|flags);
-		ASSERT(kpage!=NULL);
+		
+    PANIC("Out of memory! Kernel panicted...");
 	}
 	struct ft_entry* frame = malloc(sizeof(struct ft_entry));
 	if (frame == NULL)

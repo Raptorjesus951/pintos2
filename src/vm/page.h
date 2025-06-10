@@ -6,6 +6,8 @@
 #include "filesys/file.h"
 #include "lib/kernel/hash.h"
 
+#define PAGE_SIZE 4096
+
 enum page_type
 {
   PAGE_FILE,
@@ -31,7 +33,7 @@ struct spage
   size_t read_bytes;
   size_t zero_bytes;
   
-  size_t swap_index;
+  uint32_t swap_index;
 
   struct hash_elem hash_elem;
 };

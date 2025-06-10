@@ -1,7 +1,7 @@
 #include "page.h"
 #include "swap.h"
 #include "stack.h"
-
+#include "frame.h"
 
 void spt_init(struct hash *spt)
 {
@@ -46,11 +46,12 @@ bool handle_page_fault(struct hash *spt, void *fault_addr)
 {
   spage *sp = spt_find(spt, fault_addr);
   if(sp == NULL)
-    return false;
+    return false; //segfault
 
-  void *kpage = palloc_get_page(PAL_USER);
+  void *kpage = ftalloc(PAL_USER, sp->upage, &sp->swap_index);
   if(kpage == NULL)
-    return false;
+    PANIC("Out of memory! Kernel panicted...");
+  sp->kpage = kpage;
 
   switch (sp->type)
   {
@@ -71,21 +72,15 @@ bool handle_page_fault(struct hash *spt, void *fault_addr)
       break;
   
     case PAGE_STACK:
-      memset(kpage, 0, PGSIZE);
-      break;
+      return spt_grow_stack(spt, kpage);
 
     default:
       return false;
   }
 
-  if(!pagedir_set_page(thread_current()->pagedir, sp->upage, kpage, sp->write))
-  {
-    palloc_free_page(kpage);
-    return false;
-  }
-
   return true;
 }
+
 unsigned spage_hash(const struct hash_elem *e, void *aux UNUSED)
 {
   const struct spage *vm_entry = hash_entry(e, vm_entry, elem);
@@ -103,7 +98,7 @@ void spage_destroy(struct hash_elem *elem, void *aux UNUSED)
 {
   struct spage *sp = hash_entry(elem, struct spage, hash_elem);
 
-  //TODO clean assosiated frame
+  
 
   free(sp);
 }
