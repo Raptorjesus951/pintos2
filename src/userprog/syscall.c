@@ -573,10 +573,10 @@ int mmap(int fd, void* addr){
   mmap->file = f;
   mmap->addr = addr;
   mmap->size = size;
-  mmap->id = list_empty(&curr->mmap_list) ? 1 :
-             list_entry(list_back(&curr->mmap_list), struct mmap_desc, elem)->id + 1;
+  mmap->id = list_empty(&curr->mmaps) ? 1 :
+             list_entry(list_back(&curr->mmaps), struct mmap_desc, elem)->id + 1;
 
-  list_push_back(&curr->mmap_list, &mmap->elem);
+  list_push_back(&curr->mmaps, &mmap->elem);
 
   for (offset = 0; offset < size; offset += PGSIZE) {
     void *file_address = addr + offset;
@@ -616,7 +616,7 @@ void munmap(mapid_t mapping) {
   struct mmap_desc *desc = NULL;
   struct list_elem *e;
 
-  if (!list_empty(&t->mmap_list)) {
+  if (!list_empty(&t->mmaps)) {
     for (e = list_begin(&t->mmap_list); e != list_end(&t->mmap_list); e = list_next(e)) {
       struct mmap_desc *entry = list_entry(e, struct mmap_desc, elem);
       if (entry->id == mapping) {
