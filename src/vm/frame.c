@@ -14,8 +14,6 @@
 
 
 static struct list frame_list;
-static unsigned frame_hash_func(const struct hash_elem *elem, void *aux);
-static bool     frame_less_func(const struct hash_elem *, const struct hash_elem *, void *aux);
 static struct lock frame_lock;
 static struct ft_entry* evicter(uint32_t pagedir);
 
@@ -151,16 +149,4 @@ static void frame_set_pinned(void* kpage, bool value){
   lock_release (&frame_lock);
 }
 
-unsigned frame_hash_function(const struct hash_elem *e, void *aux UNUSED)
-{
-    const struct ft_entry *frame = hash_entry(e,struct ft_entry, elem);
-    return hash_bytes(&frame->kpage, sizeof(frame->kpage));
-}
 
-bool
-ft_entry_less(const struct hash_elem *a, const struct hash_elem *b, void *aux UNUSED)
-{
-    const struct spage *vma = hash_entry(a, struct spage, elem);
-    const struct spage *vmb = hash_entry(b, struct spage, elem);
-    return vma->kpage < vmb->kpage;
-}
