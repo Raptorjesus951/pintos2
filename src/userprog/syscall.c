@@ -531,6 +531,7 @@ struct mmap_desc {
 };
 
 int mmap(int fd, void* addr){
+  struct thread* cur = thread_current();
   if (addr == NULL|| pg_ofs(addr) ==0)
     return -1;
 
@@ -599,14 +600,14 @@ int mmap(int fd, void* addr){
     spte->read_bytes = read_bytes;
     spte->zero_bytes = zero_bytes;
 
-    if (hash_insert(&curr->spt, spte->hash_elem) == NULL ) {
+    if (hash_insert(&curr->spt, &spte->hash_elem) == NULL ) {
       free(spte);
       lock_release(&filesys_lock);
       return -1;
     }
   }
   lock_release (&filesys_lock);
-  return mid;
+  return mmap->id;
 
 }
 
