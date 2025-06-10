@@ -113,12 +113,16 @@ struct ft_entry* evicter(uint32_t pagedir){
         if (clock_hand == list_end(&frame_table)) {
             clock_hand = list_begin(&frame_table);
         }
+    }
 
         num_checked++;
 
         if (f->pinned) 
 	   continue;
-
+	else if( pagedir_is_accessed(pagedir, e->upage)) {
+		pagedir_set_accessed(pagedir, e->upage, false);
+		continue;
+	}
         bool accessed = pagedir_is_accessed(f->owner->pagedir, f->upage);
         if (accessed) {
             pagedir_set_accessed(f->owner->pagedir, f->upage, false);
