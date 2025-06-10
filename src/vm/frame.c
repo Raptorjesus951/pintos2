@@ -110,8 +110,8 @@ struct ft_entry* evicter(uint32_t *pagedir){
 
         if (f->pinned) 
 	   continue;
-	else if( pagedir_is_accessed(pagedir, e->upage)) {
-		pagedir_set_accessed(pagedir, e->upage, false);
+	else if( pagedir_is_accessed(pagedir, f->upage)) {
+		pagedir_set_accessed(pagedir, f->upage, false);
 		continue;
 	}
         bool accessed = pagedir_is_accessed(f->t->pagedir, f->upage);
