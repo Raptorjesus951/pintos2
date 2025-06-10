@@ -30,7 +30,7 @@ void* ftalloc(enum palloc_flags flags, void* addr, uint32_t* swindx){
 	void* kpage = palloc_get_page(PAL_USER|flags);
 	
 	if(kpage == NULL){
-		struct ft_entry* f_evicted = evicter(thread_curent()->pagedir);
+		struct ft_entry* f_evicted = evicter(thread_current()->pagedir);
 		ASSERT(f_evicted != NULL);
 		pagedir_clear_page(f_evicted->t->pagedir, f_evicted->upage);
 		
@@ -77,7 +77,7 @@ void ftfree(void* kpage,bool free_kpage){
 	
 	struct ft_entry* frame = list_entry(e, struct ft_entry, elem);
 
-	list_remove(&frame_list,&frame->elem);
+	list_remove(&frame->elem);
 
 	if (free_kpage)
 		palloc_free_page(kpage);
@@ -95,7 +95,7 @@ struct ft_entry* evicter(uint32_t pagedir){
     }
 
     // Initialize the clock hand if it's NULL
-    if (clock_hand == NULL || clock_hand == list_end(&frame_table)) {
+    if (clock_hand == NULL || clock_hand == list_end(&frame_list)) {
         clock_hand = list_begin(&frame_list);
     }
 
@@ -105,8 +105,8 @@ struct ft_entry* evicter(uint32_t pagedir){
     while (num_checked < total_frames * 2) { // At most two full passes
         struct frame_entry *f = list_entry(clock_hand, struct ft_entry, elem);
         clock_hand = list_next(clock_hand);
-        if (clock_hand == list_end(&frame_table)) {
-            clock_hand = list_begin(&frame_table);
+        if (clock_hand == list_end(&frame_list)) {
+            clock_hand = list_begin(&frame_list);
         }
     }
 
