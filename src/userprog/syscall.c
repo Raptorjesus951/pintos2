@@ -559,65 +559,65 @@ int mmap(int fd, void* addr){
   }
 
   struct mmap_desc *mmap = malloc(sizeof(struct mmap_desc));
-  if (mmap == NULL) {
-    lock_release(&filesys_lock);
-    return -1;
-  }
+  if (mmap == NULL) {
+    lock_release(&filesys_lock);
+    return -1;
+  }
 
-  mmap->file = f;
-  mmap->addr = addr;
-  mmap->size = size;
-  mmap->id = list_empty(&curr->mmap_list) ? 1 :
-             list_entry(list_back(&curr->mmap_list), struct mmap_desc, elem)->id + 1;
+  mmap->file = f;
+  mmap->addr = addr;
+  mmap->size = size;
+  mmap->id = list_empty(&curr->mmap_list) ? 1 :
+             list_entry(list_back(&curr->mmap_list), struct mmap_desc, elem)->id + 1;
 
-  list_push_back(&curr->mmap_list, &mmap->elem);
+  list_push_back(&curr->mmap_list, &mmap->elem);
 
-  for (offset = 0; offset < size; offset += PGSIZE) {
-    void *file_address = addr + offset;
-    size_t read_bytes = (offset + PGSIZE < size ? PGSIZE : size - offset);
-    size_t zero_bytes = PGSIZE - read_bytes;
+  for (offset = 0; offset < size; offset += PGSIZE) {
+    void *file_address = addr + offset;
+    size_t read_bytes = (offset + PGSIZE < size ? PGSIZE : size - offset);
+    size_t zero_bytes = PGSIZE - read_bytes;
 
-    struct spage *spte = malloc(sizeof(struct spage));
-    if (spte == NULL) {
-      lock_release(&filesys_lock);
-      return -1;
+    struct spage *spte = malloc(sizeof(struct spage));
+    if (spte == NULL) {
+      lock_release(&filesys_lock);
+      return -1;
 
     }
 
-    spte->upage = file_address;
-    spte->kpage = NULL;
-    spte->type = FROM_FILESYS;
-    spte->write = true;
-    spte->loaded = false;
-    spte->file = f;
-    spte->offset = offset;
-    spte->read_bytes = read_bytes;
-    spte->zero_bytes = zero_bytes;
+    spte->upage = file_address;
+    spte->kpage = NULL;
+    spte->type = FROM_FILESYS;
+    spte->write = true;
+    spte->loaded = false;
+    spte->file = f;
+    spte->offset = offset;
+    spte->read_bytes = read_bytes;
+    spte->zero_bytes = zero_bytes;
 
-    if (hash_insert(&curr->spt, spte->hash_elem) == NULL ) {
-      free(spte);
-      lock_release(&filesys_lock);
-      return -1;
-    }
-  }
+    if (hash_insert(&curr->spt, spte->hash_elem) == NULL ) {
+      free(spte);
+      lock_release(&filesys_lock);
+      return -1;
+    }
+  }
   lock_release (&filesys_lock);
   return mid;
 
 }
 
 void munmap(mapid_t mapping) {
-  struct thread *t = thread_current();
-  struct mmap_desc *desc = NULL;
-  struct list_elem *e;
+  struct thread *t = thread_current();
+  struct mmap_desc *desc = NULL;
+  struct list_elem *e;
 
-  if (!list_empty(&t->mmap_list)) {
-    for (e = list_begin(&t->mmap_list); e != list_end(&t->mmap_list); e = list_next(e)) {
-      struct mmap_desc *entry = list_entry(e, struct mmap_desc, elem);
-      if (entry->id == mapping) {
-        desc = entry;
-        break;
-      }
-    }
-  }
+  if (!list_empty(&t->mmap_list)) {
+    for (e = list_begin(&t->mmap_list); e != list_end(&t->mmap_list); e = list_next(e)) {
+      struct mmap_desc *entry = list_entry(e, struct mmap_desc, elem);
+      if (entry->id == mapping) {
+        desc = entry;
+        break;
+      }
+    }
+  }
 }
 
