@@ -26,7 +26,7 @@ void* ftalloc(enum palloc_flags flags, void* addr, uint32_t* swindx){
 	void* kpage = palloc_get_page(PAL_USER|flags);
 	
 	if(kpage == NULL){
-		struct ft_entry* f_evicted = evicter(*thread_current()->pagedir);
+		struct ft_entry* f_evicted = evicter(thread_current()->pagedir);
 		ASSERT(f_evicted != NULL);
 		pagedir_clear_page(f_evicted->t->pagedir, f_evicted->upage);
 		
@@ -54,7 +54,7 @@ void* ftalloc(enum palloc_flags flags, void* addr, uint32_t* swindx){
 	lock_release(&frame_lock);
 
 	return kpage;
-}
+*}
 
 void ftfree(void* kpage,bool free_kpage){
 	ASSERT(is_kernel_vaddr(kpage) || pg_ofs(kpage) == 0);
@@ -80,7 +80,7 @@ void ftfree(void* kpage,bool free_kpage){
 	free(frame);
 	lock_release(&frame_lock);
 }
-struct ft_entry* evicter(uint32_t pagedir){
+struct ft_entry* evicter(uint32_t *pagedir){
     static struct list_elem *clock_hand = NULL;
 
     lock_acquire(&frame_lock);
