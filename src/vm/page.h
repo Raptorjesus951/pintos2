@@ -28,7 +28,7 @@ struct spage
 
   //for file backed pages
   struct file *file;
-  off_t offset
+  off_t offset;
 
   size_t read_bytes;
   size_t zero_bytes;
@@ -51,8 +51,8 @@ bool handle_page_fault(struct hash *spt, void *fault_addr);
 
 bool spt_grow_stack(struct hash *spt, void *fault_addr);
 
-unsigned spage_hash(const struct hash_elem *e, void *aux UNUSED)
-bool spage_less(const struct hash_elem *a, const struct hash_elem *b, void *aux UNUSED)
+unsigned spage_hash(const struct hash_elem *e, void *aux UNUSED);
+bool spage_less(const struct hash_elem *a, const struct hash_elem *b, void *aux UNUSED);
 void spage_destroy(struct hash_elem *elem, void *aux UNUSED);
 
 #endif

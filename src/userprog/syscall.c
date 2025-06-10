@@ -310,7 +310,7 @@ int sys_open(const char* file) {
   fd->file = file_opened; //file save
   struct thread *current = thread_current();
   struct list* fd_list = &current->file_descriptors;
-  struct thread *back;
+  //struct thread *back;
   bool empty = list_empty(fd_list);
   if ( empty ) fd->id = 3;
   else {
@@ -525,7 +525,7 @@ mapid_t mmap(int fd, void* addr){
   if (file_d == NULL)
     return -1;
   lock_acquire (&filesys_lock);
-  strutc file* f = file_reopen(file_d->file);
+  struct file* f = file_reopen(file_d->file);
 
   if (f == NULL){
     lock_release(&filesys_lock);

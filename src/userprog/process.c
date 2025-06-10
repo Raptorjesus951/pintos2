@@ -19,6 +19,7 @@
 #include "threads/thread.h"
 #include "threads/vaddr.h"
 #include "vm/page.h"
+#include "vm/stack.h"
 
 #ifdef DEBUG
 #define _DEBUG_PRINTF(...) printf(__VA_ARGS__)
@@ -698,18 +699,12 @@ push_arguments (const char* cmdline_tokens[], int argc, void **esp)
 static bool
 setup_stack (void **esp)
 {
-  uint8_t *kpage;
+  //uint8_t *kpage;
   bool success = false;
-
-  kpage = palloc_get_page (PAL_USER | PAL_ZERO);
-  if (kpage != NULL)
-    {
-      success = install_page (((uint8_t *) PHYS_BASE) - PGSIZE, kpage, true);
-      if (success)
-        *esp = PHYS_BASE;
-      else
-        palloc_free_page (kpage);
-    }
+  
+  success = spt_grow_stack(&thread_current()->spt, (uint8_t *)PHYS_BASE - PAGE_SIZE);
+  if(success)
+    *esp = PHYS_BASE;
   return success;
 }
 

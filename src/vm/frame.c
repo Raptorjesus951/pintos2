@@ -7,25 +7,15 @@
 #include "swap.h"
 #include "page.h"
 #include "threads/thread.h"
-#include "threads/palloc.h"
 #include "threads/malloc.h"
 #include "userprog/pagedir.h"
 #include "threads/vaddr.h"
+
 
 static struct list frame_list;
 static unsigned frame_hash_func(const struct hash_elem *elem, void *aux);
 static bool     frame_less_func(const struct hash_elem *, const struct hash_elem *, void *aux);
 static struct lock frame_lock;
-
-struct ft_entry{
-	
-	void* upage;
-	void* kpage;
-
-	struct thread* t;
-	bool pinned;                   // Can this frame be evicted?
-	struct list_elem elem;
-};
 
 void frame_table_init(){
 	list_init(&frame_list);
@@ -158,11 +148,6 @@ static void frame_set_pinned(void* kpage, bool valie){
 
   lock_release (&frame_lock);
 }
-
-
-
-
-
 
 unsigned frame_hash_function(const struct hash_elem *e, void *aux UNUSED)
 {

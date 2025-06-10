@@ -6,6 +6,8 @@
 #include "threads/interrupt.h"
 #include "threads/thread.h"
 
+#include "vm/page.h"
+
 /* Number of page faults processed. */
 static long long page_fault_cnt;
 
@@ -160,6 +162,6 @@ page_fault (struct intr_frame *f)
   /* To implement virtual memory, delete the rest of the function
      body, and replace it with code that brings in the page to
      which fault_addr refers. */
-  handle_page_fault(&thread_current()->sp, fault_addr); 
+  handle_page_fault(&thread_current()->spt, fault_addr); 
 }
 
