@@ -1,5 +1,4 @@
 #include "lib/kernel/list.h"
-#include <hash.h>
 #include "lib/kernel/hash.h"
 
 #include "frame.h"
@@ -115,9 +114,9 @@ struct ft_entry* evicter(uint32_t pagedir){
 		pagedir_set_accessed(pagedir, e->upage, false);
 		continue;
 	}
-        bool accessed = pagedir_is_accessed(f->owner->pagedir, f->upage);
+        bool accessed = pagedir_is_accessed(f->t->pagedir, f->upage);
         if (accessed) {
-            pagedir_set_accessed(f->owner->pagedir, f->upage, false);
+            pagedir_set_accessed(f->t->pagedir, f->upage, false);
         } else {
             // Found a victim
             lock_release(&frame_lock);
@@ -125,7 +124,7 @@ struct ft_entry* evicter(uint32_t pagedir){
         }
     }
 
-    lock_release(&frame_table_lock);
+    lock_release(&frame_lock);
     return NULL; // No suitable frame found (unlikely unless all are pinned)
 }
 static void frame_set_pinned(void* kpage, bool value){
