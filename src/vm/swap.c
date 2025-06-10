@@ -48,25 +48,3 @@ void swap_free(uint32_t index){
 	bitmap_set(available, index, true);
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
->>>>>>> 9c1fc2ecd19b5a3847b0e5cf9502586a39135b19
