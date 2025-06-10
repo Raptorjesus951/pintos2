@@ -13,7 +13,7 @@
 
 static struct list frame_list;
 static struct lock frame_lock;
-static struct ft_entry* evicter(uint32_t pagedir);
+static struct ft_entry* evicter(uint32_t* pagedir);
 
 void frame_table_init(){
 	list_init(&frame_list);
@@ -54,7 +54,7 @@ void* ftalloc(enum palloc_flags flags, void* addr, uint32_t* swindx){
 	lock_release(&frame_lock);
 
 	return kpage;
-*}
+}
 
 void ftfree(void* kpage,bool free_kpage){
 	ASSERT(is_kernel_vaddr(kpage) || pg_ofs(kpage) == 0);
