@@ -4,42 +4,63 @@
 #include "lib/kernel/hash.h"
 
 #include "frame.h"
+#include "swap.h"
+#include "page.h"
 #include "threads/thread.h"
 #include "threads/palloc.h"
 #include "threads/malloc.h"
 #include "userprog/pagedir.h"
 #include "threads/vaddr.h"
 
-static struct hash frame_hash;
+static struct list frame_list;
 static unsigned frame_hash_func(const struct hash_elem *elem, void *aux);
 static bool     frame_less_func(const struct hash_elem *, const struct hash_elem *, void *aux);
+static struct lock frame_lock;
 
 struct ft_entry{
 	
 	void* upage;
 	void* kpage;
 
-	struct hash_elem elem;
 	struct thread* t;
+	bool pinned;                   // Can this frame be evicted?
+	struct list_elem elem;
 };
 
 void frame_table_init(){
-	hash_init(&frame_hash,frame_hash_func,ft_entry_less,NULL);
+	list_init(&frame_list);
+	lock_init(&frame_lock);
 }
 
 void* ftalloc(enum palloc_flags flags, void* addr){
 
+	lock_acquire(&frame_lock);
 	void* kpage = palloc_get_page(PAL_USER|flags);
 	
-	ASSERT(page != NULL) //TODO change to condiction for eviction
-	
+	if(kpage == NULL){
+		struct ft_entry* f_evicted = evicter(thread_curent()->pagedir);
+		ASSERT(f_evicted != NULL);
+		pagedir_clear_page(f_evicted->t->pagedir, f_evicted->upage);
+		
+		bool is_dirty = false;
+		is_dirty = is_dirty || pagedir_is_dirty(f_evicted->t->pagedir, f_evicted->upage);
+		is_dirty = is_dirty || pagedir_is_dirty(f_evicted->t->pagedir, f_evicted->kpage);
+		
+		uint32_t swap_idx = swap_out( f_evicted->kpage );
+		
+		ft_free(f_evicted->kpage,true);
+		kpage = palloc_get_page(PAL_USER|flags);
+		ASSERT(kpage!=NULL);
+	}
 	struct ft_entry* frame = malloc(sizeof(struct ft_entry));
 	if (frame == NULL)
 		return NULL;
 	frame->kpage = kpage;
 	frame->upage = addr;
 	frame->t = thread_current();
-	hash_insert(&frame_list, &frame->elem);
+	frame->pinned = true;
+	list_push_back(&frame_list, &frame->elem);
+	lock_release(&frame_lock);
 
 	return kpage;
 }
@@ -47,22 +68,89 @@ void* ftalloc(enum palloc_flags flags, void* addr){
 void ftfree(void* kpage,bool free_kpage){
 	ASSERT(is_kernel_vaddr(kpage) || pg_ofs(kpage) == 0);
 	
-	struct ft_entry* temp;
-	temp.kpage = kpage;
+	lock_aquire(&frame_lock);
 
-	struct hash_elem* h= hash_find(&fram_hash, &(temp.kpage));
-	if (h == NULL)
+	struct ft_entry* temp;
+	struct list_elem* e;
+	for(e= list_begin(&frame_list); e != list_end(&frame_list); e = list_next(e)){
+		temp = list_entry(e, struct ft_entry,elem);
+		if (temp->kpage == kpage)
+			break;
+	}
+	if (e == list_end(&frame_list))
 		PANIC("The page can't be found");
 	
-	struct ft_entry* frame = hash_entry(h, struct ft_entry, helem);
+	struct ft_entry* frame = list_entry(e, struct ft_entry, elem);
 
-	hash_delete(&frame_hash,&frame->elem);
+	list_remove(&frame_list,&frame->elem);
 
 	if (free_kpage)
 		palloc_free_page(kpage);
 	free(frame);
+	lock_release(&frame_lock);
 }
+struct ft_entry* evicter(uint32_t pagedir){
+    static struct list_elem *clock_hand = NULL;
 
+    lock_acquire(&frame_lock);
+
+    if (list_empty(&frame_list)) {
+        lock_release(&frame_lock);
+        PANIC("No frames to evict!");
+    }
+
+    // Initialize the clock hand if it's NULL
+    if (clock_hand == NULL || clock_hand == list_end(&frame_table)) {
+        clock_hand = list_begin(&frame_list);
+    }
+
+    size_t num_checked = 0;
+    size_t total_frames = list_size(&frame_list);
+
+    while (num_checked < total_frames * 2) { // At most two full passes
+        struct frame_entry *f = list_entry(clock_hand, struct ft_entry, elem);
+        clock_hand = list_next(clock_hand);
+        if (clock_hand == list_end(&frame_table)) {
+            clock_hand = list_begin(&frame_table);
+        }
+
+        num_checked++;
+
+        if (f->pinned) 
+	   continue;
+
+        bool accessed = pagedir_is_accessed(f->owner->pagedir, f->upage);
+        if (accessed) {
+            pagedir_set_accessed(f->owner->pagedir, f->upage, false);
+        } else {
+            // Found a victim
+            lock_release(&frame_lock);
+            return f;
+        }
+    }
+
+    lock_release(&frame_table_lock);
+    return NULL; // No suitable frame found (unlikely unless all are pinned)
+}
+static void frame_set_pinned(void* kpage, bool valie){
+  lock_acquire (&frame_lock);
+
+
+  struct ft_entry* temp;
+  struct list_elem* e;
+  for(e= list_begin(&frame_list); e != list_end(&frame_list); e = list_next(e)){
+  	temp = list_entry(e, struct ft_entry,elem);
+  	if (temp->kpage == kpage)
+  		break;
+  }
+  if (e == list_end(&frame_list))
+  	PANIC("The page can't be found");
+	
+  struct ft_entry* frame = list_entry(e, struct ft_entry, elem);
+  frame->pinned = new_value;
+
+  lock_release (&frame_lock);
+}
 
 
 
