@@ -11,6 +11,7 @@
 #include "threads/thread.h"
 #include "threads/vaddr.h"
 #include "threads/synch.h"
+#include "threads/malloc.h"
 #include "lib/kernel/list.h"
 #include "vm/page.h"
 #include "vm/stack.h"
