@@ -60,7 +60,7 @@ void* ftalloc(enum palloc_flags flags, void* addr, uint32_t* swindx){
 void ftfree(void* kpage,bool free_kpage){
 	ASSERT(is_kernel_vaddr(kpage) || pg_ofs(kpage) == 0);
 	
-	lock_aquire(&frame_lock);
+	lock_acquire(&frame_lock);
 
 	struct ft_entry* temp;
 	struct list_elem* e;
@@ -98,7 +98,7 @@ struct ft_entry* evicter(uint32_t pagedir){
 
     size_t num_checked = 0;
     size_t total_frames = list_size(&frame_list);
-    struct frame_entry *f;
+    struct ft_entry *f;
     while (num_checked < total_frames * 2) { // At most two full passes
         f = list_entry(clock_hand, struct ft_entry, elem);
         clock_hand = list_next(clock_hand);
