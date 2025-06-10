@@ -3,8 +3,10 @@
 
 #include "threads/palloc.h"
 
+#include <stdbool.h>
+#include <stdint.h>
+
 struct ft_entry{
-	
 	void* upage;
 	void* kpage;
 

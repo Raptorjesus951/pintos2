@@ -3,6 +3,9 @@
 #include "stack.h"
 #include "frame.h"
 
+#include "lib/debug.h"
+#include "threads/vaddr.h"
+
 void spt_init(struct hash *spt)
 {
   hash_init(spt, spage_hash, spage_less, NULL);
@@ -10,7 +13,7 @@ void spt_init(struct hash *spt)
 
 void spt_destroy(struct hash *spt)
 {
-  hash_destroy(spt, spage_destroy, NULL);
+  hash_destroy(spt, spage_destroy);
 }
 
 struct spage *spt_find(struct hash *spt, void *upage)
@@ -19,7 +22,7 @@ struct spage *spt_find(struct hash *spt, void *upage)
   temp.upage = pg_round_down(upage);
   struct spage *sp = hash_find(spt, &temp.hash_elem);
 
-  return sp != NULL ? hash_entry(sp, struct spage, hash_elem) : NULL;
+  return sp != NULL ? hash_entry(&sp->hash_elem, struct spage, hash_elem) : NULL;
 }
 
 bool spt_insert(struct hash *spt, struct spage *sp)
@@ -44,7 +47,7 @@ bool spt_remove(struct hash *spt, void *upage)
 
 bool handle_page_fault(struct hash *spt, void *fault_addr)
 {
-  spage *sp = spt_find(spt, fault_addr);
+  struct spage *sp = spt_find(spt, fault_addr);
   if(sp == NULL)
     return false; //segfault
 
@@ -62,7 +65,7 @@ bool handle_page_fault(struct hash *spt, void *fault_addr)
       break;
     
     case PAGE_SWAP:
-      swap_in(s->swap_index, kpage);
+      swap_in(sp->swap_index, kpage);
       break;
 
     case PAGE_MMAP:
@@ -83,15 +86,15 @@ bool handle_page_fault(struct hash *spt, void *fault_addr)
 
 unsigned spage_hash(const struct hash_elem *e, void *aux (UNUSED))
 {
-  const struct spage *vm_entry = hash_entry(e, vm_entry, elem);
-  return hash_bytes(&vm_entry->upage, sizeof(vm_entry->page));
+  const struct spage *vm_entry = hash_entry(e, struct spage, hash_elem);
+  return hash_bytes(&vm_entry->upage, sizeof(vm_entry->upage));
 }
 
 bool spage_less(const struct hash_elem *a, const struct hash_elem *b, void *aux (UNUSED))
 {
-  const struct spage *vma = hash_entry(a, struct spage, elem);
-  const struct spage *vmb = hash_entry(b, struct spage, elem);
-  return vma->uaddr < vmb->uaddr;
+  const struct spage *vma = hash_entry(a, struct spage, hash_elem);
+  const struct spage *vmb = hash_entry(b, struct spage, hash_elem);
+  return vma->upage < vmb->upage;
 }
 
 void spage_destroy(struct hash_elem *elem, void *aux (UNUSED))

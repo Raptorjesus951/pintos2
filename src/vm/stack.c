@@ -1,8 +1,12 @@
 #include "stack.h"
 #include "frame.h"
+#include "page.h"
+
+#include "threads/vaddr.h"
+
 #define STACK_MAX_SIZE 8000000
 
-stack_page_count = 0;
+uint32_t stack_page_count = 0;
 
 bool spt_grow_stack(struct hash *spt, void *fault_addr)
 {
