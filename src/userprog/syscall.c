@@ -592,7 +592,7 @@ int mmap(int fd, void* addr){
 
     spte->upage = file_address;
     spte->kpage = NULL;
-    spte->type = FROM_FILESYS;
+    spte->type = PAGE_MMAP;
     spte->write = true;
     spte->loaded = false;
     spte->file = f;
