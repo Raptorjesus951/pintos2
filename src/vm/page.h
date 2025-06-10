@@ -28,6 +28,9 @@ struct spage
   struct file *file;
   off_t offset
 
+  size_t read_bytes;
+  size_t zero_bytes;
+  
   size_t swap_index;
 
   struct hash_elem hash_elem;
@@ -42,6 +45,9 @@ struct spage *spt_find(struct hash *spt, void *upage);
 bool spt_insert(struct hash *spt, struct spage *sp);
 bool spt_remove(struct hash *spt, void *upage);
 
+bool handle_page_fault(struct hash *spt, void *fault_addr);
+
+bool spt_grow_stack(struct hash *spt, void *fault_addr);
 
 unsigned spage_hash(const struct hash_elem *e, void *aux UNUSED)
 bool spage_less(const struct hash_elem *a, const struct hash_elem *b, void *aux UNUSED)

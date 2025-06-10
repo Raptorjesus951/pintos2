@@ -1,4 +1,7 @@
 #include "page.h"
+#include "swap.h"
+#include "stack.h"
+
 
 void spt_init(struct hash *spt)
 {
@@ -39,8 +42,50 @@ bool spt_remove(struct hash *spt, void *upage)
   return false;
 }
 
+bool handle_page_fault(struct hash *spt, void *fault_addr)
+{
+  spage *sp = spt_find(spt, fault_addr);
+  if(sp == NULL)
+    return false;
 
+  void *kpage = palloc_get_page(PAL_USER);
+  if(kpage == NULL)
+    return false;
 
+  switch (sp->type)
+  {
+    case PAGE_FILE:
+      file_seek(sp->file, sp->offset);
+      file_read(sp->file, kpage, sp->read_bytes);
+      memset(kpage + sp->read_bytes, 0, sp->zero_bytes);
+      break;
+    
+    case PAGE_SWAP:
+      swap_in(s->swap_index, kpage);
+      break;
+
+    case PAGE_MMAP:
+      file_seek(sp->file, sp->offset);
+      file_read(sp->file, kpage, sp->read_bytes);
+      memset(kpage + sp->read_bytes, 0, sp->zero_bytes);
+      break;
+  
+    case PAGE_STACK:
+      memset(kpage, 0, PGSIZE);
+      break;
+
+    default:
+      return false;
+  }
+
+  if(!pagedir_set_page(thread_current()->pagedir, sp->upage, kpage, sp->write))
+  {
+    palloc_free_page(kpage);
+    return false;
+  }
+
+  return true;
+}
 unsigned spage_hash(const struct hash_elem *e, void *aux UNUSED)
 {
   const struct spage *vm_entry = hash_entry(e, vm_entry, elem);
