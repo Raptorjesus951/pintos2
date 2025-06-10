@@ -228,8 +228,27 @@ syscall_handler (struct intr_frame *f)
       break;
     }
 
+  case SYS_MMAP:
+    {
+      int fd;
+      void *addr;
+      memread_user(f->esp + 4, &fd, intsize);
+      memread_user(f->esp + 8, &addr, intsize);
+      
+      int res = mmap(fd, addr);
+      f->eax = res;
+      break;
+    }
 
-  /* unhandled case */
+  case SYS_MUNMAP:
+    {
+      int id;
+      memread_user(f->esp + 4, &id, intsize);
+      
+      munmap(id);
+      break;
+    } 
+    /* unhandled case */
   default:
     printf("[ERROR!] system call %d is unimplemented!\n", syscall_number);
     // ensure that waiting (parent) process should wake up and terminate.
@@ -249,7 +268,7 @@ void sys_exit(int status) {
   struct thread *current = thread_current ();
   printf("%s: exit(%d)\n", current->name, status);
 
- 
+
   struct process_control_block *pcb = current->pcb;
   if(pcb != NULL) {
     pcb->exited = 1;
@@ -319,8 +338,8 @@ int sys_open(const char* file) {
   bool empty = list_empty(fd_list);
   if ( empty ) fd->id = 3;
   else {
-	fd->id = (list_entry(list_back(fd_list),struct file_desc, elem)->id)+1;
-	//fd->id = (back->id) + 1;
+    fd->id = (list_entry(list_back(fd_list),struct file_desc, elem)->id)+1;
+    //fd->id = (back->id) + 1;
   }
   list_push_back(fd_list, &(fd->elem));
 
@@ -448,15 +467,15 @@ check_user (const uint8_t *uaddr) {
   // check uaddr range or segfaults
   int32_t result = get_user(uaddr);
   if( result  == -1)
-  	fail_invalid_access();
+    fail_invalid_access();
 }
 
 static int32_t
 get_user (const uint8_t *uaddr) {
   int result; 
   if (! ((void*)uaddr < PHYS_BASE)) {
-      result = -1;
-	  return result;
+    result = -1;
+    return result;
   }
 
   asm ("movl $1f, %0; movzbl %1, %0; 1:"
@@ -476,7 +495,7 @@ put_user (uint8_t *udst, uint8_t byte) {
   bool result = (error_code != -1);
   return result;
 }
-static int
+  static int
 memread_user (void *src, void *dst, size_t bytes)
 {
   int32_t value;
@@ -485,18 +504,18 @@ memread_user (void *src, void *dst, size_t bytes)
     t = src+i;
     value = get_user(t);
     if(value != -1) {
-		*(char*)(dst + i) = value & 0xff;
-	}
-	else{  
-		fail_invalid_access();
-	}
+      *(char*)(dst + i) = value & 0xff;
+    }
+    else{  
+      fail_invalid_access();
+    }
   }
   return (int)bytes;
 }
 
 /****** Helper Function on File Access ********************/
 
-static struct file_desc*
+  static struct file_desc*
 find_file_desc(struct thread *t, int fd)
 {
   ASSERT (t != NULL);
@@ -505,7 +524,7 @@ find_file_desc(struct thread *t, int fd)
     return NULL;
   }
 
- 
+
   bool empty = list_empty(&t -> file_descriptors);
   if (!empty) {
     struct list_elem *e = list_begin(&t->file_descriptors);
@@ -559,8 +578,8 @@ int mmap(int fd, void* addr){
 
     struct hash_elem *e= hash_find (&thread_current()->spt, &spte_temp.hash_elem);
     if (e == NULL){
-       lock_release(&filesys_lock);
-       return -1;
+      lock_release(&filesys_lock);
+      return -1;
     }
   }
 
@@ -574,7 +593,7 @@ int mmap(int fd, void* addr){
   mmap->addr = addr;
   mmap->size = size;
   mmap->id = list_empty(&curr->mmaps) ? 1 :
-             list_entry(list_back(&curr->mmaps), struct mmap_desc, elem)->id + 1;
+    list_entry(list_back(&curr->mmaps), struct mmap_desc, elem)->id + 1;
 
   list_push_back(&curr->mmaps, &mmap->elem);
 
