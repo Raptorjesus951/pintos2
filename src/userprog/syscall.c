@@ -43,8 +43,8 @@ int sys_write(int fd, const void *buffer, unsigned size);
 
 struct lock filesys_lock;
 
-mapid_t mmap(int fd, void* addr);
-void munmap(mapid_t mapping);
+int mmap(int fd, void* addr);
+void munmap(int mapping);
 
 void
 syscall_init (void)
@@ -517,7 +517,7 @@ find_file_desc(struct thread *t, int fd)
 }
 
 
-mapid_t mmap(int fd, void* addr){
+int mmap(int fd, void* addr){
   if (addr == NULL|| pg_ofs(addr) ==0)
     return -1;
 
@@ -558,7 +558,7 @@ mapid_t mmap(int fd, void* addr){
  */
   }
 
-  mapid_t id;
+  int id;
   if (!list_empty(&thread_current()->mmap_list)) {
     id = list_entry(list_back(&curr->mmap_list), struct mmap_desc, elem)->id + 1;
   }
